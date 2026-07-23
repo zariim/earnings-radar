@@ -142,7 +142,7 @@
     <div class="tbl-scroll">
       <table id="rankTbl">
         <thead><tr><th>#</th><th>股票</th><th>板块</th><th>行业</th><th>类型</th>
-          <th class="num">同比增速</th><th class="num">净利(万元)</th><th class="num">PE / 市值</th><th>快报实际</th><th>公告</th></tr></thead>
+          <th class="num">同比增速</th><th class="num">净利(万元)</th><th class="num">PE / 市值</th><th class="num">同花顺 EPS</th><th>快报实际</th><th>公告</th><th>研报</th></tr></thead>
         <tbody id="rankBody"></tbody>
       </table>
     </div>
@@ -297,6 +297,18 @@ function renderRank(){
     }
     let ann='<span style="color:var(--ink-3)">—</span>';
     if(r.ann) ann=`<a href="javascript:void(0)" onclick="openAnn('${r.ann.art_code}','${esc(r.name)}');event.stopPropagation()" title="${esc(r.ann.title)}">📄查看</a> <a href="${r.ann.pdf_url}" target="_blank" onclick="event.stopPropagation()" title="下载PDF">⬇</a>`;
+    // 同花顺 EPS (机构均值, 对照)
+    let ths='<span style="color:var(--ink-3)">—</span>';
+    if(r.ths_eps){
+      const t=r.ths_eps;
+      ths=`${t.year}E <b>${t.mean.toFixed(2)}</b><span style="color:var(--ink-3);font-size:10px">/${t.n}家</span><br><span style="color:var(--ink-3);font-size:10px">${t.min.toFixed(1)}~${t.max.toFixed(1)}</span>`;
+    }
+    // 研报按钮
+    let rep='<span style="color:var(--ink-3)">—</span>';
+    if(r.reports && r.reports.length){
+      const top=r.reports[0];
+      rep=`<a href="javascript:void(0)" onclick="openRep('${r.code}');event.stopPropagation()" title="${esc(top.orgName)} | ${esc(top.title)}">📊 ${r.reports.length}</a>`;
+    }
     // 估值列: PE(同业分位) / PB / 市值 / 换手
     let val='<span style="color:var(--ink-3)">—</span>';
     if(r.pe_ttm!=null){
@@ -317,7 +329,8 @@ function renderRank(){
       <td class="num">${fmtWan(r.np_wan)}</td>
       <td class="num" style="font-size:11.5px">${val}</td>
       <td class="num" style="font-size:11.5px">${exp}</td>
-      <td style="font-size:11px">${ann}</td></tr>`;
+      <td style="font-size:11px">${ann}</td>
+      <td style="font-size:11px">${rep}</td></tr>`;
   }).join("") || `<tr><td colspan="10" style="color:var(--ink-3);padding:20px;text-align:center">无满足阈值的公司,调低阈值试试</td></tr>`;
   window._rankRows=rows;
 }
@@ -330,7 +343,17 @@ function toggleDetail(tr,i){
   if(r.express) exLine=`<br><b>业绩快报(实际):</b> 净利同比 ${gfmt(r.express.actual_yoy)} · <b>${r.express.verdict}</b>(对比预告区间 ${gfmt(r.chg_lo)}~${gfmt(r.chg_hi)})`;
   let annLine="";
   if(r.ann) annLine=`<br><b>公告下载链接:</b> <a href="${r.ann.detail_url}" target="_blank">${esc(r.ann.title)}</a> <span style="color:var(--ink-3)">(${r.ann.date})</span>`;
-  row.innerHTML=`<td colspan="10"><b>变动原因:</b> ${esc(r.reason)||"—"}<br><span style="color:var(--ink-3)">预告区间: ${gfmt(r.chg_lo)} ~ ${gfmt(r.chg_hi)} · 公告日 ${r.notice_date}</span>${exLine}${annLine}</td>`;
+  let repLine="";
+  if(r.reports && r.reports.length){
+    repLine = `<br><b>📊 最新研报 (top ${r.reports.length}):</b><div style="margin-top:3px;margin-left:8px">` +
+      r.reports.map(x =>
+        `<div style="font-size:12px;padding:2px 0"><span style="color:var(--ink-3)">${x.publishDate}</span> · ${esc(x.orgName||'机构')} · ${esc((x.title||'').slice(0,60))}` +
+        (x.predictNextYearEps?` <span class="chip" style="font-size:10px;background:#eef1f6;color:var(--ink-2)">26E EPS ${Number(x.predictNextYearEps).toFixed(2)}</span>`:'')+
+        (x.pdf?` <a href="${x.pdf}" target="_blank" style="font-size:11px">PDF</a>`:'')+
+        `</div>`).join("") +
+      `</div>`;
+  }
+  row.innerHTML=`<td colspan="11"><b>变动原因:</b> ${esc(r.reason)||"—"}<br><span style="color:var(--ink-3)">预告区间: ${gfmt(r.chg_lo)} ~ ${gfmt(r.chg_hi)} · 公告日 ${r.notice_date}</span>${exLine}${annLine}${repLine}</td>`;
   tr.after(row);
 }
 $("yoySlider").addEventListener("input",renderRank);

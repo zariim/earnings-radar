@@ -17,6 +17,8 @@ import announce
 import q1
 import tencent
 import news
+import thsep
+import research
 
 REPORT_DATE = "2026-06-30"
 Q1_DATE = "2026-03-31"
@@ -155,6 +157,35 @@ def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True):
         anns = announce.enrich([r["code"] for r in good_list])
         for row in good_list:
             row["ann"] = anns.get(row["code"])
+    # 同花顺一致预期 EPS — 只对已有一致预期覆盖的股(避免无谓请求), 并行拉
+    import concurrent.futures as _cf
+    ths_targets = [r["code"] for r in good_list
+                   if cmap.get(r["code"], {}).get("implied_yoy") is not None]
+    thsep_data = {}
+    if ths_targets:
+        with _cf.ThreadPoolExecutor(max_workers=8) as ex:
+            for code, rows in zip(ths_targets,
+                                  ex.map(thsep.fetch, ths_targets)):
+                thsep_data[code] = rows
+    for row in good_list:
+        ths_eps_list = thsep_data.get(row["code"]) or []
+        if ths_eps_list:
+            cur_year = max(ths_eps_list, key=lambda x: x["year"])
+            row["ths_eps"] = {"year": cur_year["year"], "n": cur_year["n"],
+                              "mean": cur_year["mean"], "min": cur_year["min"],
+                              "max": cur_year["max"]}
+        else:
+            row["ths_eps"] = None
+    # 东财最新研报 (top 3, 并行)
+    rep_targets = [r["code"] for r in good_list[:60]]  # 只前 60 只拉研报
+    rep_data = {}
+    if rep_targets:
+        with _cf.ThreadPoolExecutor(max_workers=6) as ex:
+            for code, reps in zip(rep_targets,
+                                  ex.map(lambda c: (c, research.fetch(c, page_size=3, max_pages=1)), rep_targets)):
+                rep_data[code] = reps[1][:3] if isinstance(reps, tuple) else []
+    for row in good_list:
+        row["reports"] = rep_data.get(row["code"], [])
     # 腾讯财经实时行情补 PB / 换手 (免费, 不限频)
     tq = tencent.quotes([r["code"] for r in good_list])
     for row in good_list:
