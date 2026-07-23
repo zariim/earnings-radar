@@ -223,6 +223,7 @@ function renderChips(){
     `<span class="chip ok">预喜率 ${(k.good_rate*100).toFixed(0)}%</span>`+
     `<span class="chip red">主板红旗 ${k.main_flag}</span>`+
     `<span class="chip dim">已出快报 ${k.express_n||0}</span>`+
+    `<span class="chip ok">腾讯 PB/换手 已接</span>`+
     `<span class="chip dim">${D._cached?"缓存":"实时"} · 数据截止 ${D.asof}</span>`;
 }
 function renderHero(){
@@ -277,8 +278,10 @@ function renderRank(){
     if(r.pe_ttm!=null){
       const pc=r.pe_pctile;
       const pcls=pc==null?'':pc>=80?'neg':pc<=25?'pos':'';
-      val=`<b>PE ${r.pe_ttm}</b>${pc!=null?`<span class="pctile ${pcls}" title="PE在同业分位">${pc}%</span>`:''}`
-        +`<br><span style="color:var(--ink-3);font-size:10.5px">${r.mktcap_yi!=null?r.mktcap_yi+'亿':''}</span>`;
+      const pbTxt=r.pb!=null?` · PB ${r.pb}`:'';
+      const toTxt=r.turnover!=null?`换手 ${r.turnover}%`:'';
+      val=`<b>PE ${r.pe_ttm}</b>${pc!=null?`<span class="pctile ${pcls}" title="PE在同业分位">${pc}%</span>`:''}${pbTxt}`
+        +`<br><span style="color:var(--ink-3);font-size:10.5px">${r.mktcap_yi!=null?r.mktcap_yi+'亿':''} ${toTxt}</span>`;
     }
     return `<tr class="stk" data-i="${i}" onclick="toggleDetail(this,${i})">
       <td>${i+1}</td>

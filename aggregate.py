@@ -15,6 +15,7 @@ import consensus
 import express
 import announce
 import q1
+import tencent
 
 REPORT_DATE = "2026-06-30"
 Q1_DATE = "2026-03-31"
@@ -153,6 +154,15 @@ def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True):
         anns = announce.enrich([r["code"] for r in good_list])
         for row in good_list:
             row["ann"] = anns.get(row["code"])
+    # 腾讯财经实时行情补 PB / 换手 (免费, 不限频)
+    tq = tencent.quotes([r["code"] for r in good_list])
+    for row in good_list:
+        v = tq.get(row["code"])
+        if v:
+            row["pb"] = v["pb"]
+            row["turnover"] = v["turnover"]
+            row["price"] = v["price"]
+            row["change_pct"] = v["change_pct"]
     bad_sorted = sorted([r for r in bad if r["chg"] is not None],
                         key=lambda x: x["chg"])
     bad_list = [_slim(r) for r in bad_sorted[:100]]

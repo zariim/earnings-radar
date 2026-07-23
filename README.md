@@ -30,6 +30,7 @@ consensus.py     # 券商一致预期 + EPS 隐含增速 + 全市场行业图(55
 express.py       # 业绩快报(实际值) + 预告 vs 快报交叉验证
 q1.py            # 一季报实际增速(红旗榜 Q1 证伪 + 恶化结构诊断)
 announce.py      # 公司公告链接(上交所/深交所 PDF + 详情页),12h 磁盘缓存
+tencent.py       # 腾讯财经 qt.gtimg.cn 实时报价(PB/换手/PE),30分钟缓存,免费
 aggregate.py     # 组装五视图 JSON(build 入口)
 server.py        # Flask 端口 3003,内存缓存 30min + 磁盘快照秒加载 + --daily-refresh 自刷
 refresh.py       # 每日快照脚本(供 Windows 计划任务)
@@ -46,6 +47,7 @@ dashboard.html   # 单页看板(Chart.js CDN, 五段锚点)
 | 业绩快报(实际值) | `RPT_FCI_PERFORMANCEE` | YSTZ=营收同比 JLRTBZCL=净利同比 |
 | 一季报实际(Q1证伪) | `RPT_LICO_FN_CPD` | `(REPORTDATE='YYYY-MM-DD')` SJLTZ=净利同比 |
 | 公告链接 | `np-anotice-stock.eastmoney.com/api/security/ann` | 按标题关键词过滤业绩类 |
+| 实时报价(PB/换手/PE) | `qt.gtimg.cn/q=shXXXXXX,szXXXXXX` | 腾讯财经公开接口,免费 |
 
 ## 🚀 快速开始
 
