@@ -6,21 +6,47 @@ express.py — 业绩快报 (实际值)
 用途: 与业绩预告(区间预测)做交叉验证 —— 快报落在预告区间内?超/不及预告?
 """
 import em
+import dcache
 
 REPORT_NAME = "RPT_FCI_PERFORMANCEE"
 
 
+def _ashare_whitelist():
+    """A 股白名单 (与 q1.py 共用, 同盘缓存)。"""
+    return dcache.get_or_load(
+        "A_SHARE_WHITELIST", {"_q": "v1"}, _build_whitelist, ttl=86400
+    )
+
+
+def _build_whitelist():
+    import datetime
+    today = datetime.date.today()
+    for back in range(0, 8):
+        d = (today - datetime.timedelta(days=back)).strftime("%Y-%m-%d")
+        rows = em.paginate("RPT_VALUEANALYSIS_DET",
+                            filter_str=f"(TRADE_DATE='{d}')",
+                            columns="SECURITY_CODE", page_size=500, max_pages=20)
+        if rows and len(rows) > 1000:
+            return {str(r.get("SECURITY_CODE") or "").zfill(6) for r in rows
+                    if r.get("SECURITY_CODE")}
+    return set()
+
+
 def fetch_all(report_date="2026-06-30"):
-    """拉本期全部已披露业绩快报。"""
+    """拉本期全部已披露业绩快报 (A 股 only, 磁盘缓存 6h)。"""
+    cached = dcache.get(REPORT_NAME, {"_q": "express_ashare", "date": report_date})
+    if cached is not None:
+        return cached
     cols = ("SECURITY_CODE,SECURITY_NAME_ABBR,TOTAL_OPERATE_INCOME,"
             "PARENT_NETPROFIT,YSTZ,JLRTBZCL,WEIGHTAVG_ROE,NOTICE_DATE")
     rows = em.paginate(REPORT_NAME, filter_str=f"(REPORT_DATE='{report_date}')",
                        columns=cols, page_size=500, sort_col="NOTICE_DATE",
                        sort_type=-1, max_pages=10)
+    wl = _ashare_whitelist()
     out = {}
     for r in rows:
         code = str(r.get("SECURITY_CODE") or "").zfill(6)
-        if not code or code == "000000":
+        if not code or code == "000000" or code not in wl:
             continue
         np_yuan = r.get("PARENT_NETPROFIT")
         out[code] = {
@@ -32,6 +58,7 @@ def fetch_all(report_date="2026-06-30"):
             "roe": round(r["WEIGHTAVG_ROE"], 2) if r.get("WEIGHTAVG_ROE") is not None else None,
             "notice_date": (r.get("NOTICE_DATE") or "")[:10],
         }
+    dcache.put(REPORT_NAME, {"_q": "express_ashare", "date": report_date}, out)
     return out
 
 

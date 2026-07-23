@@ -37,6 +37,16 @@ def get(report, params, ttl=_TTL_DEFAULT):
         return None
 
 
+def get_or_load(report, params, loader, ttl=_TTL_DEFAULT):
+    """缓存优先; miss 时调 loader() 加载并写回。"""
+    hit = get(report, params, ttl=ttl)
+    if hit is not None:
+        return hit
+    data = loader()
+    put(report, params, data)
+    return data
+
+
 def put(report, params, data):
     """写缓存 (失败不影响主流程)。"""
     try:
