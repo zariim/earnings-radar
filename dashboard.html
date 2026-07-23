@@ -258,7 +258,7 @@ function renderHero(){
     ["高增(≥阈值)", `<span id="heroHi">${k.high_growth}</span>`, `同比增速≥${D.min_yoy}% 家数`],
     ["主板红旗", k.main_flag, `真警报(Q1已证伪) ${k.main_high||0} 家最该排查`],
   ];
-  $("hero").innerHTML=cells.map(c=>`<div class="stat"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="d">${c[2]}</div></div>`).join("");
+  $("hero").innerHTML=cells.map(c=>`<div class="stat" title="已披露预告:2026中报已发业绩预告的 unique 股票数(不含快报/半年报/未发预告股)。\n\n详细字段含义见 README 'disclosed 精确含义' 一节。"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="d">${c[2]}</div></div>`).join("");
 }
 
 function drawPano(){

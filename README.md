@@ -107,6 +107,57 @@ Q1_DATE = "2026-06-30"      # 上期中报(用于红旗榜 Q1 证伪)
 - 当前账号下 iwencai 不可用(参见 full-market-funnel 项目)
 - 数据为研报与公司自报口径,本工具**不做投资建议**
 
+## 📐 disclosed = 1830 的精确含义
+
+dashboard 顶部 KPI 卡显示的"已披露预告 1830 家"是:
+
+> 截至查询时点,在东方财富 datacenter 报表 `RPT_PUBLIC_OP_NEWPREDICT` (REPORT_DATE='2026-06-30') 中,所有**已发过 2026 年中报业绩预告**的 **unique 股票代码数**(去重后)。
+
+**统计流程**(4 步):
+```
+datacenter 原始返回     4698 行  (每只股可能有归母+扣非+EPS 多行)
+  ↓ 按 SECURITY_CODE 去重, 优先取 PREDICT_FINANCE_CODE=004 (归母净利)
+unique code 计数       1830 个
+  ↓ normalize() 输出
+dashboard disclosed     1830
+```
+
+**包含什么**:
+- ✓ 已发 2026 中报**业绩预告**的所有公司
+- ✓ 类型分布: 预增 564 / 首亏 281 / 增亏 219 / 预减 215 / 减亏 202 / 扭亏 197 / 略增 67 / 续亏 62
+- ✓ 板块分布: 主板 1606 / 创业板 124 / 科创板 62 / 北交所 38
+
+**不包含什么**:
+- ✗ 业绩快报 (另表 RPT_FCI_PERFORMANCEE, 当前 33 只)
+- ✗ 完整半年报 (8 月底后陆续披露)
+- ✗ 业绩平稳没发预告的 ~3500 只 A 股
+- ✗ 跨期预告 (2025 年报、2025 三季报, 另一组 REPORT_DATE)
+
+**与"全 A 股 ~5340 家"的关系**:
+```
+5340 家 A 股
+  ├─ 1830 家已发 2026 中报业绩预告 (本工具 covered)  34%
+  ├─ 33 家 发了 2026 中报业绩快报     (本工具 covered, 另查)
+  └─ 3477 家 业绩平稳未发预告         (本工具 not covered)
+```
+
+如果你想让"已披露"覆盖率更广(包含快报),看下方「扩展 disclosed 范围」一节。
+
+## 扩展 disclosed 范围(可选)
+
+当前 dashboard 用 `forecast.fetch_universe(REPORT_DATE='2026-06-30')` 拉取, 只算"业绩预告"。
+
+可以扩展为"预告 + 快报"的并集:
+
+```python
+# 在 aggregate.py 中改 disclosed 计算
+ex_codes = {r["code"] for r in express.fetch_all(REPORT_DATE)}  # 33 只
+fc_codes = {r["code"] for r in forecast.normalize(forecast.fetch_universe(REPORT_DATE))}
+disclosed = len(fc_codes | ex_codes)  # 预告 OR 快报
+```
+
+适用场景: 8 月底完整半年报陆续披露后, 可以再加半年报(覆盖几乎全部 5340 家)。
+
 ## 🙏 致谢
 
 - 数据源:东方财富 datacenter (公开 HTTP 接口)
