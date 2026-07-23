@@ -16,6 +16,7 @@ import express
 import announce
 import q1
 import tencent
+import news
 
 REPORT_DATE = "2026-06-30"
 Q1_DATE = "2026-03-31"
@@ -280,6 +281,7 @@ def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True):
 
     panorama = {
         "asof": asof, "period": PERIOD, "min_yoy": min_yoy,
+        "telegraph": news.cls_telegraph(15),  # 财联社电报 15 条 (5 分钟缓存)
         "kpi": kpi, "style_dist": style_dist,
         "good_list": good_list, "bad_list": bad_list,
         "industry": industry,

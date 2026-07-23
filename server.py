@@ -18,6 +18,9 @@ from flask import Flask, jsonify, request, send_from_directory
 
 import aggregate
 import announce
+import check_coverage
+import forecast
+import em
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(HERE, "data")
@@ -152,6 +155,56 @@ def api_announcement():
     return jsonify(d)
 
 
+def _run_coverage_check():
+    """后台自检: 对比 dashboard disclosed vs 全披露源, 差超阈值打 warning。
+    异步执行不阻塞看板启动。用 stderr + flush 解决 daemon thread stdout 被 Flask 重定向/缓冲问题。"""
+    import sys
+    import datetime
+
+    def _log(s):
+        sys.stderr.write(s + "\n")
+        sys.stderr.flush()
+
+    time.sleep(8)  # 等 dashboard 第一波请求完成后再查
+    try:
+        import requests
+        r = requests.get("http://127.0.0.1:3003/api/panorama",
+                         params={"min_yoy": 50}, timeout=10)
+        if not r.ok:
+            _log("[coverage] dashboard API 不可达, 跳过自检")
+            return
+        dashboard_n = r.json().get("kpi", {}).get("disclosed", 0)
+        if not dashboard_n:
+            _log("[coverage] dashboard 无 disclosed 数据, 跳过")
+            return
+        # 对照三个数据源
+        raw = forecast.fetch_universe(aggregate.REPORT_DATE)
+        forecast_codes = {r["code"] for r in forecast.normalize(raw)}
+        ex_rows = em.paginate("RPT_FCI_PERFORMANCEE",
+                              filter_str=f"(REPORT_DATE='{aggregate.REPORT_DATE}')",
+                              page_size=500, max_pages=10)
+        ex_codes = set(str(r.get("SECURITY_CODE") or "").zfill(6)
+                       for r in ex_rows
+                       if str(r.get("SECURITY_CODE") or "").zfill(6) != "000000")
+        full_rows = em.paginate("RPT_LICO_FN_CPD",
+                                filter_str=f"(REPORTDATE='{aggregate.REPORT_DATE}')",
+                                page_size=500, max_pages=10)
+        full_codes = set(str(r.get("SECURITY_CODE") or "").zfill(6)
+                         for r in full_rows
+                         if str(r.get("SECURITY_CODE") or "").zfill(6) != "000000")
+        full_n = len(forecast_codes | ex_codes | full_codes)
+        diff = full_n - dashboard_n
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        msg = (f"[coverage {ts}] disclosed={dashboard_n} | 全披露={full_n} | "
+               f"差 {diff:+d} ({diff/dashboard_n*100:+.1f}%)")
+        if abs(diff) >= 100:
+            _log(f"⚠ {msg}  超阈值, 可能 datacenter 滞后或媒体口径差异")
+        else:
+            _log(f"✓ {msg}  在容差内")
+    except Exception as e:  # noqa
+        _log(f"[coverage] 自检异常: {e}")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=3003)
@@ -172,5 +225,8 @@ if __name__ == "__main__":
         _th.Thread(target=_daily_refresher, args=(args.daily_refresh, 50.0),
                    daemon=True).start()
         print(f"已启用每日自动刷新: 每天 {args.daily_refresh}:00")
+    # 启动后异步跑数据覆盖自检 (dashboard disclosed vs 全披露源)
+    import threading as _th2
+    _th2.Thread(target=_run_coverage_check, daemon=True).start()
     print(f"业绩预告高增雷达 → http://{args.host}:{args.port}/")
     app.run(host=args.host, port=args.port, threaded=True)

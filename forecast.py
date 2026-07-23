@@ -33,10 +33,12 @@ def _mid(lo, hi):
 
 
 def fetch_universe(report_date="2026-06-30"):
-    """拉全市场预告原始行 (含归母/扣非等多行)。"""
+    """拉全市场预告原始行 (含归母/扣非等多行)。
+    重要: 不要传 sort_col/sortType — datacenter 在 sort 模式下会重复返回部分行并漏数据,
+    导致 unique code 数被腰斩。实测不传 sort_col 时拿全 1830+ 只, 传了只剩 992。"""
     flt = f"(REPORT_DATE='{report_date}')"
     return em.paginate(REPORT_NAME, filter_str=flt, page_size=500,
-                       sort_col="NOTICE_DATE", sort_type=-1)
+                       max_pages=60)
 
 
 def normalize(rows):

@@ -38,6 +38,16 @@
   .chips { display:flex; gap:8px; flex-wrap:wrap; margin:2px 0 14px; }
   .chip { padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
   .chip.ok { background:#e7f4e7; color:var(--grn); }
+  .tele{ background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:14px; }
+  .tele-hd{ padding:8px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px; font-size:12.5px; }
+  .tele-hd .live-dot{ width:8px; height:8px; border-radius:50%; background:#e14a4a; box-shadow:0 0 0 0 rgba(225,74,74,.6); animation:pulse 1.8s infinite; }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(225,74,74,.6)} 70%{box-shadow:0 0 0 6px rgba(225,74,74,0)} 100%{box-shadow:0 0 0 0 rgba(225,74,74,0)} }
+  .tele-ts{ color:var(--ink-3); font-size:11px; margin-left:auto; }
+  .tele-bd{ padding:4px 0; max-height:160px; overflow:auto; }
+  .tele-row{ padding:5px 14px; font-size:12px; border-bottom:1px solid #f3f2ec; display:flex; gap:10px; }
+  .tele-row:last-child{ border-bottom:none; }
+  .tele-row:hover{ background:#fafaf7; }
+  .tele-row .ts{ color:var(--ink-3); font-size:11px; flex-shrink:0; min-width:78px; }
   .chip.red { background:#fbe9e9; color:var(--red); }
   .chip.dim { background:#f0efe9; color:var(--ink-3); }
   .hero { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px; }
@@ -104,6 +114,10 @@
 
 <main>
   <div class="chips" id="chips"></div>
+  <div class="tele" id="teleWrap">
+    <div class="tele-hd"><span class="live-dot"></span><b>📡 财联社电报</b> <span class="tele-ts" id="teleTs"></span></div>
+    <div class="tele-bd" id="teleBd"></div>
+  </div>
   <div class="hero" id="hero"></div>
 
   <section id="sec-pano">
@@ -212,7 +226,8 @@ function boot(){
     D=d; $("loading").style.display="none";
     fetch(API+"/meta").then(r=>r.json()).then(m=>{ META=m; renderRule(); });
     $("asof").textContent=d.asof||"—";
-    renderChips(); renderHero(); drawPano(); drawIndustry(); drawExpect(); drawFlag();
+    renderChips(); renderHero(); renderTelegraph();
+    drawPano(); drawIndustry(); drawExpect(); drawFlag();
     renderRank(); // uses slider default 50
   }).catch(e=>{ $("loading").textContent="网络错误: "+e; });
 }
@@ -225,6 +240,15 @@ function renderChips(){
     `<span class="chip dim">已出快报 ${k.express_n||0}</span>`+
     `<span class="chip ok">腾讯 PB/换手 已接</span>`+
     `<span class="chip dim">${D._cached?"缓存":"实时"} · 数据截止 ${D.asof}</span>`;
+}
+
+function renderTelegraph(){
+  const tg=(D.telegraph||[]);
+  $("teleTs").textContent = tg.length? `更新 ${tg[0].time||""}` : "暂无";
+  $("teleBd").innerHTML = tg.length ? tg.slice(0,15).map(n =>
+    `<div class="tele-row"><span class="ts">${(n.time||"").slice(5,16)}</span><span>${esc(n.title||"")}</span></div>`
+  ).join("") : `<div class="tele-row"><span class="ts">--</span><span style="color:var(--ink-3)">财联社电报暂不可用</span></div>`;
+}
 }
 function renderHero(){
   const k=D.kpi;
