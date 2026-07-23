@@ -1,7 +1,7 @@
 """
 em.py — 东方财富 datacenter 直连封装
 ================================
-只用东财公开 HTTP 接口, 不依赖 iFinD / 本地 bridge。
+只用东财公开 HTTP 接口。
 - fetch(): 统一 GET (固定 UA + Referer + 令牌桶限流 + JSONP 剥离 + 异常兜底)
 - paginate(): datacenter 报表分页聚合
 - board_of(): 按代码前缀判板块 (主板/创业板/科创板/北交所)

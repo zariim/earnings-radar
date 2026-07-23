@@ -15,7 +15,6 @@ import consensus
 import express
 import announce
 import q1
-import ifind
 
 REPORT_DATE = "2026-06-30"
 Q1_DATE = "2026-03-31"
@@ -154,16 +153,6 @@ def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True):
         anns = announce.enrich([r["code"] for r in good_list])
         for row in good_list:
             row["ann"] = anns.get(row["code"])
-    # iFinD 实时行情增强 (PB/换手/成交额) — bridge 通则用, 不通自动跳过
-    ifind_on = ifind.available()
-    if ifind_on:
-        iq = ifind.quotes([r["code"] for r in good_list])
-        for row in good_list:
-            v = iq.get(row["code"])
-            if v:
-                row["pb"] = v["pb"]
-                row["turnover"] = v["turnover"]
-                row["amount_yi"] = v["amount_yi"]
     bad_sorted = sorted([r for r in bad if r["chg"] is not None],
                         key=lambda x: x["chg"])
     bad_list = [_slim(r) for r in bad_sorted[:100]]
@@ -280,7 +269,7 @@ def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True):
                    "cls": forecast._cls(t)} for t, n in tcnt.most_common()]
 
     panorama = {
-        "asof": asof, "period": PERIOD, "min_yoy": min_yoy, "ifind_on": ifind_on,
+        "asof": asof, "period": PERIOD, "min_yoy": min_yoy,
         "kpi": kpi, "style_dist": style_dist,
         "good_list": good_list, "bad_list": bad_list,
         "industry": industry,

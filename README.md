@@ -1,7 +1,7 @@
 # 业绩预告高增雷达 (Earnings Radar)
 
 > 独立实现的**全市场业绩预告高增筛选工具**: 从全市场业绩预告里筛高增股、与券商一致预期对比、按行业标注,并对"应披露而未披露"的主板股反向打红旗。
-> 全部走东方财富 datacenter 直连 HTTP,无需付费数据源;可选接入 iFinD 增强行情维度(实时报价、PB、换手率)。
+> 全部走东方财富 datacenter 公开 HTTP 接口,**无需任何付费数据源 / 无需 iFinD / 无需本地 bridge**,开箱即用。
 
 ---
 
@@ -30,7 +30,6 @@ consensus.py     # 券商一致预期 + EPS 隐含增速 + 全市场行业图(55
 express.py       # 业绩快报(实际值) + 预告 vs 快报交叉验证
 q1.py            # 一季报实际增速(红旗榜 Q1 证伪 + 恶化结构诊断)
 announce.py      # 公司公告链接(上交所/深交所 PDF + 详情页),12h 磁盘缓存
-ifind.py         # 同花顺 iFinD 接入层(经本地 bridge,优雅降级,不通回落)
 aggregate.py     # 组装五视图 JSON(build 入口)
 server.py        # Flask 端口 3003,内存缓存 30min + 磁盘快照秒加载 + --daily-refresh 自刷
 refresh.py       # 每日快照脚本(供 Windows 计划任务)
@@ -47,7 +46,6 @@ dashboard.html   # 单页看板(Chart.js CDN, 五段锚点)
 | 业绩快报(实际值) | `RPT_FCI_PERFORMANCEE` | YSTZ=营收同比 JLRTBZCL=净利同比 |
 | 一季报实际(Q1证伪) | `RPT_LICO_FN_CPD` | `(REPORTDATE='YYYY-MM-DD')` SJLTZ=净利同比 |
 | 公告链接 | `np-anotice-stock.eastmoney.com/api/security/ann` | 按标题关键词过滤业绩类 |
-| (可选)iFinD 实时行情 | 本地 bridge 5001 端口 `/realtime` | 优雅降级,bridge 不通自动跳过 |
 
 ## 🚀 快速开始
 
@@ -70,18 +68,6 @@ pip install -r requirements.txt
 python server.py --port 3003 --warm
 # 浏览器打开 http://127.0.0.1:3003/
 ```
-
-### 可选:启用 iFinD 行情层(补 PB / 换手 / 成交额)
-
-```bash
-# 终端1: iFinD bridge
-python "C:/Users/ASUS/finance-mcp-server/python-bridge/ifind_bridge.py" --port 5001
-# 终端2: 高增雷达 (会自动检测 iFinD 是否在线)
-python server.py --port 3003 --daily-refresh 18
-```
-
-- bridge 在线时:高增榜多出 **PB / 换手率 / 成交额**(iFinD 独有,东财估值表没有)
-- bridge 离线时:自动跳过,看板照常工作,顶部显示 "iFinD 离线·回落东财"
 
 ### 每日自动刷新
 
@@ -114,7 +100,7 @@ Q1_DATE = "2026-06-30"      # 上期中报(用于红旗榜 Q1 证伪)
 
 ## ⚠️ 局限与已知问题
 
-- iFinD 高价值数据(盈利预测/研报/事件流)在当前账号下报 -4001/-208/-5100 不可用,只用其稳定的实时行情
+- 业绩快报/一季报实际值是滞后数据(数据中心最新实际值通常晚 1-2 周),所以归因与红旗证伪用"最新可得实际财报"做对照
 - datacenter 部分表(财务三表详细科目)偶有 -209 字段权限问题,核心三表已规避
 - 当前账号下 iwencai 不可用(参见 full-market-funnel 项目)
 - 数据为研报与公司自报口径,本工具**不做投资建议**
@@ -122,7 +108,6 @@ Q1_DATE = "2026-06-30"      # 上期中报(用于红旗榜 Q1 证伪)
 ## 🙏 致谢
 
 - 数据源:东方财富 datacenter (公开 HTTP 接口)
-- iFinD:同花顺 iFinD SDK
 
 ## License
 
