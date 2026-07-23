@@ -218,7 +218,7 @@ def api_summary():
 @app.route("/api/module/<name>")
 def api_module(name):
     """按需加载各模块数据。
-    name: high_growth | redflag | industry | vs_expect | telegraph | reports
+    name: high_growth | redflag | industry | vs_expect | announcements_for_codes
     只返回当前模块字段, 不带其它无关数据 (减小 payload)。
     """
     min_yoy = request.args.get("min_yoy", "50")
@@ -243,8 +243,6 @@ def api_module(name):
             panorama, _, _ = CACHE.get(min_yoy)
             return jsonify({"vs_expect": panorama.get("vs_expect", []),
                             "stat": panorama.get("vs_expect_stat", {})})
-        elif name == "telegraph":
-            return jsonify({"telegraph": news.cls_telegraph(20)})
         elif name == "announcements_for_codes":
             codes = request.args.get("codes", "").split(",")
             codes = [c.strip() for c in codes if c.strip()][:top]

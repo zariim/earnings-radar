@@ -18,27 +18,36 @@
   header.topnav .asof b { color:var(--ink); }
   main { padding:18px 24px; max-width:1400px; margin:0 auto; }
   /* ===== 菜单页 ===== */
-  .menu-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+  .menu-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
   .menu-kpi { background:var(--card); border:1px solid var(--line);
     border-radius:10px; padding:12px 14px; }
   .menu-kpi .k { font-size:11.5px; color:var(--ink-3); }
   .menu-kpi .v { font-size:22px; font-weight:600; margin-top:2px; }
   .menu-kpi .d { font-size:10.5px; color:var(--ink-3); margin-top:2px; }
   .menu-kpis .kpi-main .v { color: var(--red); }
-  .menu-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  .menu-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; margin-bottom:14px; }
   .menu-card { background:var(--card); border:1px solid var(--line); border-radius:12px;
     padding:18px 20px; cursor:pointer; transition:all .15s; }
   .menu-card:hover { border-color:var(--accent); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.06); }
   .menu-card h3 { margin:0 0 6px; font-size:15px; }
-  .menu-card p { margin:0 0 8px; color:var(--ink-3); font-size:12px; }
+  .menu-card p { margin:0 0 8px; color:var(--ink-3); font-size:12px; line-height:1.5; }
   .menu-card .badge { display:inline-block; font-size:10.5px; padding:2px 6px;
     border-radius:4px; background:#eef1f6; color:var(--ink-2); margin-right:4px; }
-  .menu-card .badge.live { background:#fbe9e9; color:var(--red); }
-  /* ===== 模块页 (共用) ===== */
+  .menu-card .badge.red { background:#fbe9e9; color:var(--red); }
+  /* 菜单底部 口径备注 */
+  .menu-note { background:#f6f5ef; border:1px solid var(--line);
+    border-radius:10px; padding:14px 18px; margin-top:18px; font-size:11.5px;
+    color:var(--ink-2); line-height:1.7; }
+  .menu-note h4 { margin:0 0 6px; font-size:12px; color:var(--ink-3); }
+  .menu-note code { background:#eae9e3; padding:1px 5px; border-radius:3px; font-size:11px; }
+  .menu-note ul { margin:4px 0 0 0; padding-left:18px; }
+  .menu-note li { margin:2px 0; }
+  /* ===== 模块页 ===== */
   .module-head { display:flex; align-items:center; margin-bottom:12px; }
   .module-head h2 { margin:0; font-size:17px; }
   .module-head .back { font-size:12px; color:var(--accent); cursor:pointer;
-    margin-right:14px; padding:4px 10px; border:1px solid var(--line); border-radius:6px; background:var(--card); }
+    margin-right:14px; padding:4px 10px; border:1px solid var(--line);
+    border-radius:6px; background:var(--card); }
   .module-head .back:hover { background:#eef1f6; }
   .module-head .meta { margin-left:auto; font-size:11.5px; color:var(--ink-3); }
   .loading { padding:40px; text-align:center; color:var(--ink-3); }
@@ -46,6 +55,9 @@
     border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite;
     vertical-align:middle; margin-right:8px; }
   @keyframes spin { to { transform:rotate(360deg); } }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; margin-bottom:14px; }
+  .panel-chart { height:220px; }
   table { width:100%; border-collapse:collapse; font-size:12.5px; background:var(--card);
     border:1px solid var(--line); border-radius:10px; overflow:hidden; }
   th,td { padding:6px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
@@ -53,25 +65,18 @@
   th.num,td.num { text-align:right; font-variant-numeric:tabular-nums; }
   .tbl-scroll { max-height:520px; overflow:auto; }
   tr.stk:hover { background:#fafaf7; cursor:pointer; }
-  .tele-bd { padding:4px 0; max-height:340px; overflow:auto; }
-  .tele-row { padding:5px 14px; font-size:12px; border-bottom:1px solid #f3f2ec;
-    display:flex; gap:10px; }
-  .tele-row:hover { background:#fafaf7; }
-  .tele-row .ts { color:var(--ink-3); font-size:11px; flex-shrink:0; min-width:78px; }
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px;
-    padding:14px 16px; margin-bottom:14px; }
-  .row { display:flex; gap:12px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
-  .row input,.row select { font-size:12px; padding:5px 8px; border:1px solid var(--line);
-    border-radius:6px; background:var(--card); }
+  .ind-pill { font-size:10.5px; padding:1px 6px; border-radius:4px;
+    background:#eef1f6; color:var(--ink-2); }
+  .detail td { font-size:11.5px; background:#fcfcfb; }
   .badge { display:inline-block; font-size:10.5px; padding:2px 6px;
     border-radius:4px; background:#eef1f6; color:var(--ink-2); margin-right:4px; }
   .badge.live { background:#fbe9e9; color:var(--red); }
   .badge.ok { background:#e6f5e6; color:#0a7d0a; }
   .badge.red { background:#fbe9e9; color:var(--red); }
   .badge.warn { background:#fdf3e2; color:#b5761b; }
-  .ind-pill { font-size:10.5px; padding:1px 6px; border-radius:4px;
-    background:#eef1f6; color:var(--ink-2); }
-  .detail td { font-size:11.5px; background:#fcfcfb; }
+  .row { display:flex; gap:12px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .row input,.row select { font-size:12px; padding:5px 8px; border:1px solid var(--line);
+    border-radius:6px; background:var(--card); }
   /* 弹窗 */
   .modal-bg { position:fixed; inset:0; background:rgba(20,23,34,.45); display:none;
     align-items:center; justify-content:center; z-index:50; backdrop-filter:blur(2px); }
@@ -107,7 +112,6 @@
   <div class="loading"><span class="spinner"></span>加载菜单...</div>
 </main>
 
-<!-- 公告查看弹窗 -->
 <div class="modal-bg" id="annModal" onclick="if(event.target===this) closeAnn()">
   <div class="modal-box">
     <div class="modal-hd"><h3 id="annTitle">公告</h3><button class="btn" onclick="closeAnn()">关闭</button></div>
@@ -125,7 +129,10 @@ const API = "http://127.0.0.1:3003";
 const $ = id => document.getElementById(id);
 const esc = s => (s || "").replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
 
-// ============ 菜单页 (首屏) ============
+// 图表缓存 (module 内部图表按需实例化)
+let CHART_HG = null, CHART_RF = null, CHART_IND = null, CHART_VS = null;
+
+// ============ 菜单页 ============
 async function showMenu() {
   $("app").innerHTML = '<div class="loading"><span class="spinner"></span>加载菜单...</div>';
   try {
@@ -161,59 +168,46 @@ function renderMenu(d) {
     <div class="menu-grid">
       <div class="menu-card" onclick="showModule('high_growth')">
         <h3>② 高增榜</h3>
-        <p>业绩预告增速 ≥ 阈值 (默认 50%) 的预喜公司 top 100,按增速排序。</p>
-        <span class="badge">预估耗时 1-3s</span>
-        <span class="badge live">含 PE/PB/同花顺EPS/研报</span>
+        <p>业绩预告增速 ≥ 阈值 (默认 50%) 的预喜公司 top 100,按增速排序。模块内含 预喜/预警 分布图。</p>
+        <span class="badge">预估 1-3s</span>
+        <span class="badge red">含 PE/PB/同花顺EPS/研报</span>
       </div>
       <div class="menu-card" onclick="showModule('redflag')">
         <h3>⑤ 红旗榜 (反向筛选)</h3>
-        <p>主板一致预期隐含全年≥50% 却未披露预告 + Q1 实际增速做证伪 + 五类分诊。</p>
-        <span class="badge">预估耗时 1-2s</span>
+        <p>主板一致预期隐含全年≥50% 却未披露预告 + Q1 实际增速做证伪 + 五类分诊。模块内含 分诊分布图。</p>
+        <span class="badge">预估 1-2s</span>
         <span class="badge red">196+ 真警报</span>
       </div>
       <div class="menu-card" onclick="showModule('industry')">
         <h3>③ 行业分布</h3>
-        <p>已披露预告公司按东财行业聚合,看预喜集中在哪里 (景气行业)。</p>
-        <span class="badge">预估耗时 0.5s</span>
-        <span class="badge ok">${k.universe} 家全覆盖</span>
+        <p>已披露预告公司按东财行业聚合,看预喜集中在哪里 (景气行业)。模块内含 行业 预喜率 横向图。</p>
+        <span class="badge">预估 0.5s</span>
+        <span class="badge">${k.universe} 家全覆盖</span>
       </div>
       <div class="menu-card" onclick="showModule('vs_expect')">
         <h3>④ vs 一致预期</h3>
-        <p>公司自报增速 vs 券商隐含增速,算 gap,标超预期/不及预期。</p>
-        <span class="badge">预估耗时 1s</span>
+        <p>公司自报增速 vs 券商隐含增速,算 gap,标超预期/不及预期。模块内含 判定分布图。</p>
+        <span class="badge">预估 1s</span>
         <span class="badge">双源交叉验证</span>
       </div>
-      <div class="menu-card" onclick="showModule('telegraph')">
-        <h3>📡 财联社电报</h3>
-        <p>全市场实时电报 (7x24),披露季集中期看市场即时反应。</p>
-        <span class="badge live">实时 · 5分钟缓存</span>
-        <span class="badge">含 20 条</span>
-      </div>
-      <div class="menu-card" onclick="showModule('rule')">
-        <h3>ℹ️ 口径与规则</h3>
-        <p>disclosed=1830 的精确含义 / 红旗分诊阈值 / 数据源说明。</p>
-        <span class="badge">无数据加载</span>
-      </div>
     </div>
-    ${d.telegraph && d.telegraph.length ? `
-    <div class="panel" style="margin-top:16px">
-      <div style="font-weight:600;font-size:13px;margin-bottom:6px">
-        <span class="badge live" style="background:#fbe9e9;color:#c93535">●</span> 财联社电报 (top ${d.telegraph.length})
-      </div>
-      <div class="tele-bd">
-        ${d.telegraph.slice(0,10).map(n => `
-          <div class="tele-row"><span class="ts">${(n.time||"").slice(5,16)}</span>
-            <span>${esc(n.title||"")}</span></div>`).join("")}
-      </div>
-    </div>` : ""}
+    <div class="menu-note">
+      <h4>ℹ️ 口径与规则</h4>
+      <ul>
+        <li><b>已披露 1830</b>: <code>REPORT_DATE='2026-06-30'</code> 已发 2026 中报业绩预告的 unique 股票数 (不含快报/半年报/未发预告股)。</li>
+        <li><b>Q1 已披露 5525</b>: 实际 Q1 季报已发的 A 股数 (datacenter RPT_LICO_FN_CPD 过滤 B 股/基金/债券)。</li>
+        <li><b>vs_expect 判定</b>: gap = 预告中报同比 − 一致预期隐含增速;超预期 gap≥+15, 不及预期 gap≤-15。</li>
+        <li><b>红旗分诊</b>: 主板预期≥50%+Q1净利同比<20% → 真警报·Q1已证伪 (最高优先)。</li>
+        <li><b>数据源</b>: 东财 datacenter (免费 HTTP) + 腾讯 qt.gtimg.cn (免费);零成本, 无 iFinD, 无需登录。</li>
+      </ul>
+    </div>
   `;
 }
 
-// ============ 模块页 (按需加载) ============
+// ============ 模块页 ============
 async function showModule(name) {
   $("app").innerHTML = '<div class="loading"><span class="spinner"></span>加载 ' + name + ' 数据...</div>';
   try {
-    if (name === "rule") return renderRule();
     const r = await fetch(API + "/api/module/" + name);
     const d = await r.json();
     if (d.error) { $("app").innerHTML = '<div class="loading">❌ ' + d.error + '</div>'; return; }
@@ -221,7 +215,6 @@ async function showModule(name) {
     if (name === "redflag") return renderRedFlag(d);
     if (name === "industry") return renderIndustry(d);
     if (name === "vs_expect") return renderVsExpect(d);
-    if (name === "telegraph") return renderTelegraph(d);
   } catch (e) {
     $("app").innerHTML = '<div class="loading">❌ 网络错误: ' + e + '</div>';
   }
@@ -235,13 +228,12 @@ function moduleHead(title, meta) {
   </div>`;
 }
 
-// === 高增榜 ===
+// === ② 高增榜 (含红绿中性图) ===
 async function renderHighGrowth(d) {
   $("app").innerHTML = moduleHead("② 高增榜", `${d.good_list.length} / ${d.kpi_subset.high_growth} 家`)
     + '<div class="loading"><span class="spinner"></span>正在补 ths_eps / 研报 / 公告 ...</div>';
 
   // 慢字段异步补
-  let slow = {};
   try {
     const r = await fetch(API + "/api/slow_fields");
     const j = await r.json();
@@ -249,15 +241,55 @@ async function renderHighGrowth(d) {
     d.good_list = d.good_list.map(r => Object.assign(r, map.get(r.code)||{}));
   } catch (e) {}
 
+  // 动态加载 chart.js (只在这个模块需要)
+  await loadChartJs();
+
+  // 渲染: 顶部图表 + 底部表格
   $("app").innerHTML = moduleHead("② 高增榜", `${d.good_list.length} / ${d.kpi_subset.high_growth} 家`)
+    + `<div class="panel"><div class="row">
+        <span class="badge" style="background:#fbe9e9;color:#c93535">预喜 ${d.kpi_subset.good}</span>
+        <span class="badge" style="background:#e6f5e6;color:#0a7d0a">预警 ${d.kpi_subset.bad}</span>
+        <span class="badge">中性 ${d.kpi_subset.neutral}</span>
+        <span class="badge">预喜率 ${(d.kpi_subset.good_rate*100).toFixed(1)}%</span>
+      </div>
+      <div class="row" style="display:grid;grid-template-columns:2fr 1fr;gap:14px">
+        <div class="panel-chart"><canvas id="hgStyleBar"></canvas></div>
+        <div class="panel-chart"><canvas id="hgDonut"></canvas></div>
+      </div>
+    </div>`
     + renderHighGrowthTable(d.good_list);
+  drawHighGrowthCharts(d);
+}
+
+function drawHighGrowthCharts(d) {
+  // 销毁旧图
+  if (CHART_HG) CHART_HG.forEach(c => c.destroy());
+  // 柱状: 预喜/预警 类型
+  const sd = d.style_dist || [];
+  CHART_HG = [
+    new Chart($("hgStyleBar"), {
+      type: "bar",
+      data: { labels: sd.map(s => s.style), datasets: [{ data: sd.map(s => s.n),
+        backgroundColor: sd.map(s => s.cls === "good" ? "#c93535" : s.cls === "bad" ? "#0a7d0a" : "#b0aea6"),
+        borderRadius: 3 }] },
+      options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: "#efeee8" } }, y: { grid: { display: false } } } }
+    }),
+    // 甜甜圈: 预喜/预警/中性 比例
+    new Chart($("hgDonut"), {
+      type: "doughnut",
+      data: { labels: ["预喜","预警","中性"], datasets: [{ data: [d.kpi_subset.good, d.kpi_subset.bad, d.kpi_subset.neutral],
+        backgroundColor: ["#c93535", "#0a7d0a", "#b0aea6"], borderColor: "#fcfcfb", borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: "60%",
+        plugins: { legend: { position: "bottom" } } }
+    }),
+  ];
 }
 
 function renderHighGrowthTable(rows) {
-  const tagOf = cls => cls==="good" ? '<span class="badge" style="background:#fbe9e9;color:#c93535">预喜</span>'
-                       : cls==="bad"  ? '<span class="badge" style="background:#e6f5e6;color:#0a7d0a">预警</span>'
-                                     : '<span class="badge">中性</span>';
-  return `<div class="tbl-scroll"><table>
+  window._lastRows = rows;
+  return `<div class="panel"><div class="tbl-scroll"><table>
     <thead><tr>
       <th>#</th><th>股票</th><th>板块</th><th>行业</th><th>类型</th>
       <th class="num">同比增速</th><th class="num">净利(万)</th>
@@ -289,7 +321,7 @@ function renderHighGrowthTable(rows) {
         <td style="font-size:11.5px">${ann}</td>
       </tr>`;
     }).join("")}</tbody>
-  </table></div>`;
+  </table></div></div>`;
 }
 
 function toggleDetail(tr, i) {
@@ -311,19 +343,28 @@ function toggleDetail(tr, i) {
   html += '</td>';
   row.innerHTML = html;
   tr.after(row);
-  window._lastRows = rows;
 }
 
-// === 红旗榜 ===
-function renderRedFlag(d) {
-  const main = (d.main || []).slice(0, 80);
-  return $("app").innerHTML = moduleHead("⑤ 红旗榜 (反向筛选)",
+// === ⑤ 红旗榜 (含分诊分布图) ===
+async function renderRedFlag(d) {
+  $("app").innerHTML = moduleHead("⑤ 红旗榜 (反向筛选)",
     `${d.board_split.main} 主板强 / ${d.board_split.gem} 创科弱`)
+    + '<div class="loading"><span class="spinner"></span>加载图表...</div>';
+
+  await loadChartJs();
+
+  const main = (d.main || []).slice(0, 80);
+  // 分诊分布
+  const dist = d.triage_dist || [];
+  $("app").innerHTML = moduleHead("⑤ 红旗榜",
+    `主板强 ${d.board_split.main} / 创科弱 ${d.board_split.gem} · Q1已证伪 ${d.board_split.main_soft || 0}`)
     + `<div class="panel">
-      <div style="margin-bottom:8px;color:var(--ink-3);font-size:12px">
-        一致预期隐含增速≥50% 但未披露预告的主板股 (强制披露规则触发条件)。
-        <span class="badge red">${d.board_split.main_high} 真警报·Q1已证伪</span>
+      <div class="row" style="display:grid;grid-template-columns:1fr 2fr;gap:14px">
+        <div class="panel-chart"><canvas id="rfDonut"></canvas></div>
+        <div class="panel-chart"><canvas id="rfBar"></canvas></div>
       </div>
+    </div>
+    <div class="panel" style="padding:0">
       <div class="tbl-scroll"><table>
         <thead><tr><th>#</th><th>主板红旗</th><th>行业</th><th>分诊</th>
         <th class="num">隐含预期</th><th class="num">Q1净利</th></tr></thead>
@@ -338,78 +379,144 @@ function renderRedFlag(d) {
           </tr>`).join("")}</tbody>
       </table></div>
     </div>`;
+  drawRedFlagCharts(d);
 }
 
-// === 行业分布 ===
-function renderIndustry(d) {
+function drawRedFlagCharts(d) {
+  if (CHART_RF) CHART_RF.forEach(c => c.destroy());
+  const dist = d.triage_dist || [];
+  const bs = d.board_split || {};
+  CHART_RF = [
+    // 甜甜圈: 主板 vs 创科
+    new Chart($("rfDonut"), {
+      type: "doughnut",
+      data: { labels: ["主板(强信号)","创科(弱信号)"], datasets: [{ data: [bs.main||0, bs.gem||0],
+        backgroundColor: ["#c93535", "#c07a1b"], borderColor: "#fcfcfb", borderWidth: 2 }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: "60%",
+        plugins: { legend: { position: "bottom" } } }
+    }),
+    // 横向柱: 5 类分诊
+    new Chart($("rfBar"), {
+      type: "bar",
+      data: { labels: dist.map(d => d.label), datasets: [{ data: dist.map(d => d.n),
+        backgroundColor: dist.map(d => d.label.startsWith("真警报") ? "#c93535" :
+                                    d.label.startsWith("低基数") ? "#b0aea6" : "#b5761b"),
+        borderRadius: 3 }] },
+      options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { grid: { color: "#efeee8" } }, y: { grid: { display: false } } } }
+    }),
+  ];
+}
+
+// === ③ 行业分布 (含行业预喜率横条) ===
+async function renderIndustry(d) {
+  $("app").innerHTML = moduleHead("③ 行业分布", `${d.industry.length} 个行业`)
+    + '<div class="loading"><span class="spinner"></span>加载图表...</div>';
+
+  await loadChartJs();
+
   const ind = d.industry || [];
-  return $("app").innerHTML = moduleHead("③ 行业分布", `${ind.length} 个行业`)
-    + `<div class="panel"><div class="tbl-scroll"><table>
-      <thead><tr><th>行业</th><th class="num">预喜</th><th class="num">预警</th>
-        <th class="num">中性</th><th class="num">合计</th>
-        <th class="num">预喜率</th><th class="num">净利中位</th></tr></thead>
-      <tbody>${ind.map(i => `<tr>
-        <td>${esc(i.ind)}</td>
-        <td class="num" style="color:#c93535">${i.good}</td>
-        <td class="num" style="color:#0a7d0a">${i.bad}</td>
-        <td class="num">${i.neutral}</td>
-        <td class="num">${i.total}</td>
-        <td class="num">${(i.good_rate*100).toFixed(1)}%</td>
-        <td class="num">${i.median_chg!=null?gfmt(i.median_chg):'—'}</td>
-      </tr>`).join("")}</tbody>
-    </table></div></div>`;
-}
-
-// === vs 一致预期 ===
-function renderVsExpect(d) {
-  const stat = d.stat || {};
-  return $("app").innerHTML = moduleHead("④ vs 一致预期",
-    `${stat.beat||0} 超预期 / ${stat.miss||0} 不及预期`)
-    + `<div class="panel"><div class="tbl-scroll"><table>
-      <thead><tr><th>#</th><th>股票</th><th>行业</th>
-        <th class="num">预告增速</th><th class="num">隐含预期</th>
-        <th class="num">缺口</th><th>判定</th></tr></thead>
-      <tbody>${(d.vs_expect||[]).slice(0,80).map((r, i) => `
-        <tr><td>${i+1}</td><td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
-          <td><span class="ind-pill">${esc(r.industry||'')}</span></td>
-          <td class="num">${gfmt(r.chg)}</td>
-          <td class="num">${gfmt(r.expect)}</td>
-          <td class="num">${(r.gap>0?'+':'')+r.gap.toFixed(1)}</td>
-          <td><span class="badge ${r.verdict==='超预期'?'ok':r.verdict==='不及预期'?'red':''}">${r.verdict}</span></td>
+  $("app").innerHTML = moduleHead("③ 行业分布", `${ind.length} 个行业`)
+    + `<div class="panel">
+      <div class="panel-chart" style="height:${Math.min(80 + ind.length*22, 600)}px">
+        <canvas id="indBar"></canvas>
+      </div>
+    </div>
+    <div class="panel" style="padding:0">
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>行业</th><th class="num">预喜</th><th class="num">预警</th>
+          <th class="num">中性</th><th class="num">合计</th>
+          <th class="num">预喜率</th><th class="num">净利中位</th></tr></thead>
+        <tbody>${ind.map(i => `<tr>
+          <td>${esc(i.ind)}</td>
+          <td class="num" style="color:#c93535">${i.good}</td>
+          <td class="num" style="color:#0a7d0a">${i.bad}</td>
+          <td class="num">${i.neutral}</td>
+          <td class="num">${i.total}</td>
+          <td class="num">${(i.good_rate*100).toFixed(1)}%</td>
+          <td class="num">${i.median_chg!=null?gfmt(i.median_chg):'—'}</td>
         </tr>`).join("")}</tbody>
-    </table></div></div>`;
-}
-
-// === 财联社电报 ===
-function renderTelegraph(d) {
-  const tg = d.telegraph || [];
-  return $("app").innerHTML = moduleHead("📡 财联社电报", `top ${tg.length} · 5分钟刷新`)
-    + `<div class="panel"><div class="tele-bd">${tg.map(n => `
-      <div class="tele-row"><span class="ts">${(n.time||"").slice(5,16)}</span>
-        <span>${esc(n.title||"")}</span></div>`).join("")}
-    </div></div>`;
-}
-
-// === 规则说明 ===
-function renderRule() {
-  $("app").innerHTML = moduleHead("ℹ️ 口径与规则", "")
-    + `<div class="panel" style="line-height:1.8">
-      <h3 style="margin-top:0">disclosed = 1830 的精确含义</h3>
-      <p>截至查询时点,东财 datacenter <code>RPT_PUBLIC_OP_NEWPREDICT</code>
-         (REPORT_DATE='2026-06-30') 中所有已发过 2026 中报业绩预告的 unique 股票代码数。</p>
-      <p><b>包含</b>: 1830 家发过 2026 中报业绩预告<br>
-         <b>不含</b>: 业绩快报 (另表,33只)、完整半年报 (8月底)、业绩平稳未发预告 (~3500只)</p>
-      <h3>vs_expect 判定阈值</h3>
-      <p>gap = 预告中报同比 − 一致预期隐含增速<br>
-         超预期: gap ≥ +15pct · 不及预期: gap ≤ -15pct · 符合: 其他</p>
-      <h3>红旗榜分诊阈值</h3>
-      <p>真警报·Q1已证伪: 主板一致预期≥50% + Q1净利同比&lt;20%<br>
-         关注·逆行业沉默: 行业预喜率≥60% 但个股沉默<br>
-         低基数·预期虚高: 上年EPS≤0.10 或隐含增速&gt;500% (数学噪声)</p>
-      <h3>数据源</h3>
-      <p>东财 datacenter 公开 HTTP (免费) + 腾讯 qt.gtimg.cn (免费)<br>
-         全部零成本、无需 iFinD / 无需登录 / 无需 token</p>
+      </table></div>
     </div>`;
+  drawIndustryChart(ind);
+}
+
+function drawIndustryChart(ind) {
+  if (CHART_IND) CHART_IND.destroy();
+  // 按预喜率降序
+  const sorted = [...ind].sort((a, b) => b.good_rate - a.good_rate).slice(0, 25);
+  CHART_IND = new Chart($("indBar"), {
+    type: "bar",
+    data: { labels: sorted.map(i => i.ind),
+      datasets: [
+        { data: sorted.map(i => i.good), backgroundColor: "#c93535", stack: "s", label: "预喜" },
+        { data: sorted.map(i => i.neutral), backgroundColor: "#b0aea6", stack: "s", label: "中性" },
+        { data: sorted.map(i => i.bad), backgroundColor: "#0a7d0a", stack: "s", label: "预警" },
+      ] },
+    options: { indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "top" } },
+      scales: { x: { stacked: true, grid: { color: "#efeee8" } },
+                y: { stacked: true, grid: { display: false } } } }
+  });
+}
+
+// === ④ vs 一致预期 (含判定分布图) ===
+async function renderVsExpect(d) {
+  $("app").innerHTML = moduleHead("④ vs 一致预期",
+    `${d.stat.beat||0} 超预期 / ${d.stat.miss||0} 不及预期`)
+    + '<div class="loading"><span class="spinner"></span>加载图表...</div>';
+
+  await loadChartJs();
+
+  $("app").innerHTML = moduleHead("④ vs 一致预期",
+    `${d.stat.beat||0} 超预期 / ${d.stat.miss||0} 不及预期 / ${d.stat.inline||0} 符合`)
+    + `<div class="panel">
+      <div class="panel-chart"><canvas id="vsDonut"></canvas></div>
+    </div>
+    <div class="panel" style="padding:0">
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>#</th><th>股票</th><th>行业</th>
+          <th class="num">预告增速</th><th class="num">隐含预期</th>
+          <th class="num">缺口</th><th>判定</th></tr></thead>
+        <tbody>${(d.vs_expect||[]).slice(0,80).map((r, i) => `
+          <tr><td>${i+1}</td><td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
+            <td><span class="ind-pill">${esc(r.industry||'')}</span></td>
+            <td class="num">${gfmt(r.chg)}</td>
+            <td class="num">${gfmt(r.expect)}</td>
+            <td class="num">${(r.gap>0?'+':'')+r.gap.toFixed(1)}</td>
+            <td><span class="badge ${r.verdict==='超预期'?'ok':r.verdict==='不及预期'?'red':''}">${r.verdict}</span></td>
+          </tr>`).join("")}</tbody>
+      </table></div>
+    </div>`;
+  drawVsExpectChart(d);
+}
+
+function drawVsExpectChart(d) {
+  if (CHART_VS) CHART_VS.destroy();
+  const stat = d.stat || {};
+  CHART_VS = new Chart($("vsDonut"), {
+    type: "doughnut",
+    data: { labels: ["超预期","符合","不及预期"], datasets: [{ data: [stat.beat||0, stat.inline||0, stat.miss||0],
+      backgroundColor: ["#0a7d0a", "#b0aea6", "#c93535"], borderColor: "#fcfcfb", borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: "60%",
+      plugins: { legend: { position: "bottom" } } }
+  });
+}
+
+// ============ Chart.js 懒加载 ============
+let _chartJsLoading = null;
+function loadChartJs() {
+  if (window.Chart) return Promise.resolve();
+  if (_chartJsLoading) return _chartJsLoading;
+  _chartJsLoading = new Promise((resolve) => {
+    const s = document.createElement("script");
+    s.src = "https://cdn.jsdelivr.net/npm/chart.js@4";
+    s.onload = () => { Chart.defaults.font.family = 'system-ui,"PingFang SC","Microsoft YaHei",sans-serif';
+                       Chart.defaults.font.size = 11; resolve(); };
+    document.head.appendChild(s);
+  });
+  return _chartJsLoading;
 }
 
 // ============ 公告弹窗 ============
@@ -433,7 +540,6 @@ window.closeAnn = function() { $("annModal").classList.remove("on"); };
 const gfmt = v => v == null ? "—" : (v > 0 ? "+" : "") + Number(v).toFixed(1) + "%";
 const fmtWan = w => w == null ? "—" : (Math.abs(w) >= 10000 ? (w/10000).toFixed(1) + "亿" : Math.round(w) + "万");
 
-// ============ 启动 ============
 const STATE = {};
 showMenu();
 </script>
