@@ -21,6 +21,10 @@ import announce
 import check_coverage
 import forecast
 import em
+import consensus
+import express
+import q1
+import news
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(HERE, "data")
@@ -161,6 +165,95 @@ def api_meta():
     except Exception as e:  # noqa
         return jsonify({"error": str(e)}), 500
     return jsonify(meta)
+
+
+# ============ 轻量菜单端点 (秒开) ============
+
+@app.route("/api/summary")
+def api_summary():
+    """菜单页用的轻量摘要: KPI + 财联社电报 + 各模块状态。
+    不构建全景 (耗时 30s), 只读 dcache 已缓存数据 (~500ms)。"""
+    import datetime, dcache as _dc
+    try:
+        # 各表最新交易日 / 披露日
+        norm = aggregate.forecast.normalize(aggregate.forecast.fetch_universe())
+        cmap = consensus.build()
+        imap = consensus.build_industry_map()
+        exmap = express.fetch_all(aggregate.REPORT_DATE)
+        q1map = q1.fetch_q1(aggregate.Q1_DATE)
+
+        # 各模块字段 (轻量)
+        good = sum(1 for x in norm if x["cls"] == "good")
+        bad = sum(1 for x in norm if x["cls"] == "bad")
+        neutral = sum(1 for x in norm if x["cls"] == "neutral")
+        asof = max((x["notice_date"] for x in norm if x["notice_date"]), default="")
+        # 模块状态
+        modules = {
+            "forecast": {"count": len(norm), "asof": asof, "ready": True},
+            "consensus": {"count": len(cmap), "ready": True},
+            "industry": {"count": len(imap), "ready": True},
+            "express": {"count": len(exmap), "ready": True},
+            "q1": {"count": len(q1map), "ready": True},
+        }
+        # 财联社电报 (单独模块, 不在全景里)
+        tg = news.cls_telegraph(15)
+        return jsonify({
+            "kpi": {
+                "disclosed": len(norm),
+                "good": good, "bad": bad, "neutral": neutral,
+                "good_rate": round(good / len(norm), 3) if norm else 0,
+                "asof": asof,
+                "express_n": len(exmap),
+                "universe": len(imap),
+                "q1_n": len(q1map),
+            },
+            "telegraph": tg,
+            "modules": modules,
+            "ts": datetime.datetime.now().isoformat()[:19],
+        })
+    except Exception as e:  # noqa
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/module/<name>")
+def api_module(name):
+    """按需加载各模块数据。
+    name: high_growth | redflag | industry | vs_expect | telegraph | reports
+    只返回当前模块字段, 不带其它无关数据 (减小 payload)。
+    """
+    min_yoy = request.args.get("min_yoy", "50")
+    top = int(request.args.get("top", "100"))
+    try:
+        if name == "high_growth":
+            panorama, _, _ = CACHE.get(min_yoy)
+            return jsonify({
+                "good_list": panorama.get("good_list", []),
+                "style_dist": panorama.get("style_dist", []),
+                "kpi_subset": {k: panorama["kpi"][k] for k in
+                                ("disclosed", "good", "bad", "neutral",
+                                 "good_rate", "high_growth", "express_n")}
+            })
+        elif name == "redflag":
+            panorama, _, _ = CACHE.get(min_yoy)
+            return jsonify(panorama.get("redflag", {}))
+        elif name == "industry":
+            panorama, _, _ = CACHE.get(min_yoy)
+            return jsonify({"industry": panorama.get("industry", [])})
+        elif name == "vs_expect":
+            panorama, _, _ = CACHE.get(min_yoy)
+            return jsonify({"vs_expect": panorama.get("vs_expect", []),
+                            "stat": panorama.get("vs_expect_stat", {})})
+        elif name == "telegraph":
+            return jsonify({"telegraph": news.cls_telegraph(20)})
+        elif name == "announcements_for_codes":
+            codes = request.args.get("codes", "").split(",")
+            codes = [c.strip() for c in codes if c.strip()][:top]
+            anns = announce.enrich(codes)
+            return jsonify({"announcements": anns})
+        else:
+            return jsonify({"error": f"unknown module: {name}"}), 400
+    except Exception as e:  # noqa
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/health")

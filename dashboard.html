@@ -4,196 +4,113 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>业绩预告高增雷达 · Earnings Radar</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<style>
-  .modal-bg{position:fixed;inset:0;background:rgba(20,23,34,.45);display:none;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(2px);}
-  .modal-bg.on{display:flex;}
-  .modal-box{background:var(--bg);border-radius:14px;max-width:780px;width:92vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.25);}
-  .modal-hd{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;}
-  .modal-hd h3{margin:0;font-size:15px;flex:1;}
-  .modal-hd .meta{font-size:11.5px;color:var(--ink-3);}
-  .modal-bd{padding:18px 22px;overflow:auto;white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--ink);}
-  .modal-ft{padding:12px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
-  .btn{font-size:12.5px;padding:6px 14px;border-radius:6px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink);text-decoration:none;display:inline-block;}
-  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-  .btn:hover{opacity:.88;}
-</style>
 <style>
   :root { --ink:#1a1d26; --ink-2:#52514e; --ink-3:#898781; --bg:#fcfcfb;
     --line:#e9e8e2; --red:#c93535; --grn:#0a7d0a; --gry:#b0aea6;
     --card:#fff; --accent:#2a78d6; }
-  * { box-sizing:border-box; }
-  body { margin:0; font:14px/1.5 system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
-    color:var(--ink); background:var(--bg); }
-  a { color:inherit; }
-  header { position:sticky; top:0; z-index:20; background:rgba(252,252,251,.94);
-    backdrop-filter:blur(6px); border-bottom:1px solid var(--line); }
-  .hbar { max-width:1180px; margin:0 auto; padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-  .brand { font-weight:700; font-size:17px; letter-spacing:.3px; }
-  .brand small { color:var(--ink-3); font-weight:400; font-size:12px; margin-left:6px; }
-  nav { display:flex; gap:2px; margin-left:auto; flex-wrap:wrap; }
-  nav a { padding:5px 10px; border-radius:6px; font-size:12.5px; color:var(--ink-2); text-decoration:none; }
-  nav a.active, nav a:hover { background:#eef1f6; color:var(--accent); }
-  main { max-width:1180px; margin:0 auto; padding:20px; }
-  .chips { display:flex; gap:8px; flex-wrap:wrap; margin:2px 0 14px; }
-  .chip { padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
-  .chip.ok { background:#e7f4e7; color:var(--grn); }
-  .tele{ background:var(--card); border:1px solid var(--line); border-radius:10px; margin-bottom:14px; }
-  .tele-hd{ padding:8px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px; font-size:12.5px; }
-  .tele-hd .live-dot{ width:8px; height:8px; border-radius:50%; background:#e14a4a; box-shadow:0 0 0 0 rgba(225,74,74,.6); animation:pulse 1.8s infinite; }
-  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(225,74,74,.6)} 70%{box-shadow:0 0 0 6px rgba(225,74,74,0)} 100%{box-shadow:0 0 0 0 rgba(225,74,74,0)} }
-  .tele-ts{ color:var(--ink-3); font-size:11px; margin-left:auto; }
-  .tele-bd{ padding:4px 0; max-height:160px; overflow:auto; }
-  .tele-row{ padding:5px 14px; font-size:12px; border-bottom:1px solid #f3f2ec; display:flex; gap:10px; }
-  .tele-row:last-child{ border-bottom:none; }
-  .tele-row:hover{ background:#fafaf7; }
-  .tele-row .ts{ color:var(--ink-3); font-size:11px; flex-shrink:0; min-width:78px; }
-  .chip.red { background:#fbe9e9; color:var(--red); }
-  .chip.dim { background:#f0efe9; color:var(--ink-3); }
-  .hero { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px; }
-  .stat { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
-  .stat .k { font-size:12px; color:var(--ink-3); }
-  .stat .v { font-size:24px; font-weight:700; margin:3px 0; }
-  .stat .v small { font-size:14px; font-weight:600; color:var(--ink-2); }
-  .stat .d { font-size:11.5px; color:var(--ink-3); }
-  section { background:var(--card); border:1px solid var(--line); border-radius:14px;
-    padding:18px 20px; margin-bottom:20px; scroll-margin-top:64px; }
-  section h2 { margin:0 0 4px; font-size:16px; }
-  section .sub { color:var(--ink-3); font-size:12.5px; margin-bottom:14px; }
-  .chart-wrap { position:relative; height:300px; }
-  .two { display:grid; grid-template-columns:1.4fr 1fr; gap:20px; }
-  @media(max-width:820px){ .hero{grid-template-columns:repeat(2,1fr);} .two{grid-template-columns:1fr;} }
-  .controls { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:12px;
-    padding:10px 12px; background:#f7f7f3; border-radius:10px; }
-  .controls label { font-size:12.5px; color:var(--ink-2); }
-  input[type=range]{ vertical-align:middle; }
-  .yoyval { font-weight:700; color:var(--red); }
-  table { width:100%; border-collapse:collapse; font-size:12.5px; }
-  th,td { padding:6px 8px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
-  th { color:var(--ink-3); font-weight:600; position:sticky; top:0; background:var(--card); cursor:default; z-index:5; box-shadow:inset 0 -1px 0 var(--line); }
-  td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
-  .tbl-scroll { max-height:520px; overflow:auto; border:1px solid var(--line); border-radius:10px; }
-  .badge { display:inline-block; padding:1px 7px; border-radius:5px; font-size:11px; font-weight:600; }
-  .b-main{background:#e8eefb;color:#2a5cb8;} .b-gem{background:#fdeede;color:#b5761b;}
-  .b-star{background:#fbe9f2;color:#b83a77;} .b-bj{background:#eef0e8;color:#5e6b3a;}
-  .pos{color:var(--red);} .neg{color:var(--grn);}
-  .tag-good{color:var(--red);font-weight:600;} .tag-bad{color:var(--grn);font-weight:600;} .tag-neu{color:var(--ink-3);}
-  .lowbase{ font-size:10px; color:#c07a1b; background:#fdf3e2; padding:0 4px; border-radius:4px; margin-left:3px;}
-  .ex-tag{ font-size:10px; color:var(--ink-3); background:#f0efe9; padding:0 4px; border-radius:4px; }
-  .soft-tag{ font-size:10px; color:#fff; background:var(--red); padding:0 5px; border-radius:4px; margin-left:4px;}
-  .tri{ font-size:10.5px; font-weight:600; padding:1px 6px; border-radius:5px; white-space:nowrap; }
-  .tri-high{ background:#fbe9e9; color:var(--red); }
-  .tri-mid{ background:#fdf3e2; color:#b5761b; }
-  .tri-low{ background:#eef1f0; color:var(--ink-3); }
-  .pctile{ font-size:10px; color:var(--ink-3); background:#f0efe9; padding:0 4px; border-radius:4px; margin-left:4px;}
-  .pctile.neg{ background:#fbe9e9; color:var(--red);} .pctile.pos{ background:#e7f4e7; color:var(--grn);}
-  .ind-pill{ font-size:11px; background:#eef1f6; color:var(--ink-2); padding:1px 7px; border-radius:10px; }
-  tr.stk{ cursor:pointer; } tr.stk:hover{ background:#f7f9fc; }
-  .detail td{ background:#f7f7f3; font-size:12px; color:var(--ink-2); white-space:normal; }
-  .verdict-beat{color:var(--red);font-weight:600;} .verdict-miss{color:var(--grn);font-weight:600;} .verdict-in{color:var(--ink-3);}
-  .rule li{ margin-bottom:7px; color:var(--ink-2); font-size:12.5px; }
-  footer{ max-width:1180px; margin:0 auto; padding:14px 20px 40px; color:var(--ink-3); font-size:11.5px; }
-  .loading{ text-align:center; padding:60px; color:var(--ink-3); }
-  .switch{ font-size:12px; color:var(--ink-2); }
+  body { margin:0; font-family: system-ui,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background: var(--bg); color: var(--ink); font-size: 13px; }
+  header.topnav { display:flex; align-items:center; padding:10px 24px;
+    border-bottom:1px solid var(--line); background:var(--card); }
+  header.topnav .brand { font-weight:700; font-size:16px; margin-right:18px; }
+  header.topnav .brand span { color:var(--accent); }
+  header.topnav .asof { font-size:11px; color:var(--ink-3); margin-left:auto; }
+  header.topnav .asof b { color:var(--ink); }
+  main { padding:18px 24px; max-width:1400px; margin:0 auto; }
+  /* ===== 菜单页 ===== */
+  .menu-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+  .menu-kpi { background:var(--card); border:1px solid var(--line);
+    border-radius:10px; padding:12px 14px; }
+  .menu-kpi .k { font-size:11.5px; color:var(--ink-3); }
+  .menu-kpi .v { font-size:22px; font-weight:600; margin-top:2px; }
+  .menu-kpi .d { font-size:10.5px; color:var(--ink-3); margin-top:2px; }
+  .menu-kpis .kpi-main .v { color: var(--red); }
+  .menu-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+  .menu-card { background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:18px 20px; cursor:pointer; transition:all .15s; }
+  .menu-card:hover { border-color:var(--accent); transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.06); }
+  .menu-card h3 { margin:0 0 6px; font-size:15px; }
+  .menu-card p { margin:0 0 8px; color:var(--ink-3); font-size:12px; }
+  .menu-card .badge { display:inline-block; font-size:10.5px; padding:2px 6px;
+    border-radius:4px; background:#eef1f6; color:var(--ink-2); margin-right:4px; }
+  .menu-card .badge.live { background:#fbe9e9; color:var(--red); }
+  /* ===== 模块页 (共用) ===== */
+  .module-head { display:flex; align-items:center; margin-bottom:12px; }
+  .module-head h2 { margin:0; font-size:17px; }
+  .module-head .back { font-size:12px; color:var(--accent); cursor:pointer;
+    margin-right:14px; padding:4px 10px; border:1px solid var(--line); border-radius:6px; background:var(--card); }
+  .module-head .back:hover { background:#eef1f6; }
+  .module-head .meta { margin-left:auto; font-size:11.5px; color:var(--ink-3); }
+  .loading { padding:40px; text-align:center; color:var(--ink-3); }
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--line);
+    border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite;
+    vertical-align:middle; margin-right:8px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; background:var(--card);
+    border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  th,td { padding:6px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { background:#f6f5ef; color:var(--ink-3); font-weight:600; position:sticky; top:0; }
+  th.num,td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .tbl-scroll { max-height:520px; overflow:auto; }
+  tr.stk:hover { background:#fafaf7; cursor:pointer; }
+  .tele-bd { padding:4px 0; max-height:340px; overflow:auto; }
+  .tele-row { padding:5px 14px; font-size:12px; border-bottom:1px solid #f3f2ec;
+    display:flex; gap:10px; }
+  .tele-row:hover { background:#fafaf7; }
+  .tele-row .ts { color:var(--ink-3); font-size:11px; flex-shrink:0; min-width:78px; }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; margin-bottom:14px; }
+  .row { display:flex; gap:12px; align-items:center; margin-bottom:10px; flex-wrap:wrap; }
+  .row input,.row select { font-size:12px; padding:5px 8px; border:1px solid var(--line);
+    border-radius:6px; background:var(--card); }
+  .badge { display:inline-block; font-size:10.5px; padding:2px 6px;
+    border-radius:4px; background:#eef1f6; color:var(--ink-2); margin-right:4px; }
+  .badge.live { background:#fbe9e9; color:var(--red); }
+  .badge.ok { background:#e6f5e6; color:#0a7d0a; }
+  .badge.red { background:#fbe9e9; color:var(--red); }
+  .badge.warn { background:#fdf3e2; color:#b5761b; }
+  .ind-pill { font-size:10.5px; padding:1px 6px; border-radius:4px;
+    background:#eef1f6; color:var(--ink-2); }
+  .detail td { font-size:11.5px; background:#fcfcfb; }
+  /* 弹窗 */
+  .modal-bg { position:fixed; inset:0; background:rgba(20,23,34,.45); display:none;
+    align-items:center; justify-content:center; z-index:50; backdrop-filter:blur(2px); }
+  .modal-bg.on { display:flex; }
+  .modal-box { background:var(--bg); border-radius:14px; max-width:780px; width:92vw;
+    max-height:88vh; display:flex; flex-direction:column;
+    box-shadow:0 20px 50px rgba(0,0,0,.25); }
+  .modal-hd { padding:14px 20px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; gap:10px; }
+  .modal-hd h3 { margin:0; font-size:15px; flex:1; }
+  .modal-bd { padding:18px 22px; overflow:auto; white-space:pre-wrap;
+    font-size:13px; line-height:1.7; }
+  .modal-ft { padding:12px 20px; border-top:1px solid var(--line);
+    display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+  .btn { font-size:12.5px; padding:6px 14px; border-radius:6px;
+    border:1px solid var(--line); background:#fff; cursor:pointer; color:var(--ink);
+    text-decoration:none; display:inline-block; }
+  .btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .btn:hover { opacity:.88; }
+  @media(max-width:820px) {
+    .menu-kpis { grid-template-columns:repeat(2,1fr); }
+    .menu-grid { grid-template-columns:1fr; }
+  }
 </style>
 </head>
 <body>
-<header>
-  <div class="hbar">
-    <div class="brand">业绩预告高增雷达<small>Earnings Radar · 全市场 · 东方财富数据</small></div>
-    <nav id="nav">
-      <a href="#sec-pano" class="active">① 全景</a>
-      <a href="#sec-rank">② 高增榜</a>
-      <a href="#sec-ind">③ 行业分布</a>
-      <a href="#sec-exp">④ vs 一致预期</a>
-      <a href="#sec-flag">⑤ 红旗榜</a>
-      <a href="#sec-rule">口径</a>
-    </nav>
-  </div>
+<header class="topnav">
+  <a class="brand" href="javascript:void(0)" onclick="showMenu()">Earnings<span>Radar</span></a>
+  <span class="asof">数据截止 <b id="asof">--</b> · <span id="ts"></span></span>
 </header>
 
-<main>
-  <div class="chips" id="chips"></div>
-  <div class="tele" id="teleWrap">
-    <div class="tele-hd"><span class="live-dot"></span><b>📡 财联社电报</b> <span class="tele-ts" id="teleTs"></span></div>
-    <div class="tele-bd" id="teleBd"></div>
-  </div>
-  <div class="hero" id="hero"></div>
-
-  <section id="sec-pano">
-    <h2>① 预告全景</h2>
-    <div class="sub">全市场已披露业绩预告的类型分布 · <span style="color:var(--red)">红=预喜</span> / <span style="color:var(--grn)">绿=预警</span> / 灰=中性。数据截止 <b id="asof">—</b></div>
-    <div class="two">
-      <div class="chart-wrap"><canvas id="styleBar"></canvas></div>
-      <div class="chart-wrap"><canvas id="donut"></canvas></div>
-    </div>
-    <div class="sub" id="panoFn" style="margin-top:10px"></div>
-  </section>
-
-  <section id="sec-rank">
-    <h2>② 高增榜 · 阈值筛选</h2>
-    <div class="sub">预喜(预增/略增/续盈/扭亏)公司按归母净利同比增速降序。<b>点击行展开变动原因/公告全文</b>。⚠低基数 = 扭亏/首亏型同比失真。</div>
-    <div class="controls">
-      <label>同比增速阈值 ≥ <span class="yoyval" id="yoyLab">50</span>%</label>
-      <input type="range" id="yoySlider" min="50" max="500" step="25" value="50" style="width:220px">
-      <label class="switch"><input type="checkbox" id="hideLowbase"> 隐藏低基数</label>
-      <span class="chip dim" id="rankCount"></span>
-    </div>
-    <div class="tbl-scroll">
-      <table id="rankTbl">
-        <thead><tr><th>#</th><th>股票</th><th>板块</th><th>行业</th><th>类型</th>
-          <th class="num">同比增速</th><th class="num">净利(万元)</th><th class="num">PE / 市值</th><th class="num">同花顺 EPS</th><th>快报实际</th><th>公告</th><th>研报</th></tr></thead>
-        <tbody id="rankBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="sec-ind">
-    <h2>③ 行业主题分布</h2>
-    <div class="sub">东财行业 · 哪些行业预喜集中(红)、预警扎堆(绿)。柱右标注预喜率与净利变动中位。</div>
-    <div class="chart-wrap" id="indWrap" style="height:520px"><canvas id="indBar"></canvas></div>
-  </section>
-
-  <section id="sec-exp">
-    <h2>④ 预告 vs 券商一致预期</h2>
-    <div class="sub">已预告且有券商覆盖:预告H1同比 − 一致预期隐含全年增速 = 缺口。<span class="verdict-beat">超预期(+15pct)</span> / 符合 / <span class="verdict-miss">不及预期(−15pct)</span>。注:H1 与全年口径不同,仅方向参考。</div>
-    <div class="two">
-      <div class="chart-wrap"><canvas id="expScatter"></canvas></div>
-      <div class="tbl-scroll" style="max-height:340px">
-        <table><thead><tr><th>股票</th><th>行业</th><th class="num">预告</th><th class="num">预期</th><th class="num">缺口</th><th>判定</th></tr></thead>
-        <tbody id="expBody"></tbody></table>
-      </div>
-    </div>
-    <div class="sub" id="expFn" style="margin-top:10px"></div>
-  </section>
-
-  <section id="sec-flag">
-    <h2>⑤ 🚩 红旗榜 · 反向筛选</h2>
-    <div class="sub">一致预期隐含全年增速 ≥50% 却<b>未披露预告</b>。<b>主板=强信号</b>(应披露而未披露);创业板/科创板=弱信号(自愿披露,仅参考)。已剔除 EPS≤0.03 豁免。</div>
-    <div class="two">
-      <div class="chart-wrap"><canvas id="flagBar"></canvas></div>
-      <div class="tbl-scroll" style="max-height:360px">
-        <table><thead><tr><th>主板红旗</th><th>行业</th><th>分诊</th><th class="num">隐含预期</th><th class="num">Q1净利/营收</th><th class="num">券商</th></tr></thead>
-        <tbody id="flagBody"></tbody></table>
-      </div>
-    </div>
-    <div class="sub" id="flagFn" style="margin-top:10px"></div>
-  </section>
-
-  <section id="sec-rule">
-    <h2>※ 口径与规则</h2>
-    <ul class="rule" id="ruleList"></ul>
-  </section>
+<main id="app">
+  <div class="loading"><span class="spinner"></span>加载菜单...</div>
 </main>
 
 <!-- 公告查看弹窗 -->
 <div class="modal-bg" id="annModal" onclick="if(event.target===this) closeAnn()">
   <div class="modal-box">
-    <div class="modal-hd">
-      <h3 id="annTitle">公告</h3>
-      <span class="meta" id="annMeta"></span>
-      <button class="btn" onclick="closeAnn()">关闭</button>
-    </div>
+    <div class="modal-hd"><h3 id="annTitle">公告</h3><button class="btn" onclick="closeAnn()">关闭</button></div>
     <div class="modal-bd" id="annBody">加载中…</div>
     <div class="modal-ft">
       <a class="btn" id="annPdfBtn" target="_blank">⬇ 下载 PDF</a>
@@ -203,270 +120,322 @@
   </div>
 </div>
 
-<footer id="srcFn"></footer>
-
-<div id="loading" class="loading">加载全市场业绩预告中…(首次构建约 20–40 秒)</div>
-
 <script>
-const API = location.origin + "/api";
-const RED="#c93535", GRN="#0a7d0a", GRY="#b0aea6", INK3="#898781";
-let D=null, META=null, CHARTS={};
-const $=id=>document.getElementById(id);
-const clsColor=c=>c==="good"?RED:c==="bad"?GRN:GRY;
-const boardCls={main:"b-main",gem:"b-gem",star:"b-star",bj:"b-bj"};
-const gfmt=v=>{ if(v==null)return "—"; if(v<=-100)return "转亏"; if(Math.abs(v)>=1000)return (v>0?"+":"")+Math.round(v)+"%"; return (v>0?"+":"")+v.toFixed(1)+"%"; };
-const fmtWan=w=>{ if(w==null)return "—"; const a=Math.abs(w),s=w<0?"-":""; return a>=10000?s+(a/10000).toFixed(1)+"亿":s+Math.round(a)+"万"; };
-const esc=s=>(s||"").replace(/[&<>]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
-Chart.defaults.font.family='system-ui,"PingFang SC","Microsoft YaHei",sans-serif';
-Chart.defaults.font.size=11; Chart.defaults.color=INK3;
+const API = "http://127.0.0.1:3003";
+const $ = id => document.getElementById(id);
+const esc = s => (s || "").replace(/[&<>]/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[m]));
 
-function boot(){
-  fetch(API+"/panorama?min_yoy=50&fast=1").then(r=>r.json()).then(d=>{
-    if(d.error){ $("loading").textContent="加载失败: "+d.error; return; }
-    D=d; $("loading").style.display="none";
-    fetch(API+"/meta").then(r=>r.json()).then(m=>{ META=m; renderRule(); });
-    $("asof").textContent=d.asof||"—";
-    renderChips(); renderHero();
-    drawPano(); drawIndustry(); drawExpect(); drawFlag();
-    renderRank(); // uses slider default 50
-    // 后台异步拉慢字段 (ths_eps / reports / ann / tencent / telegraph)
-    fetch(API+"/slow_fields").then(r=>r.json()).then(slow=>{
-      if(slow.error) return;
-      // 合并 slow → fast 视图
-      const map=new Map(slow.good_list.map(r=>[r.code,r]));
-      D.good_list=D.good_list.map(r=>Object.assign(r,map.get(r.code)||{}));
-      D.telegraph=slow.telegraph||[];
-      renderTelegraph(); renderRank();
-    }).catch(()=>{});
-  }).catch(e=>{ $("loading").textContent="网络错误: "+e; });
-}
-
-function renderChips(){
-  const k=D.kpi;
-  $("chips").innerHTML =
-    `<span class="chip ok">预喜率 ${(k.good_rate*100).toFixed(0)}%</span>`+
-    `<span class="chip red">主板红旗 ${k.main_flag}</span>`+
-    `<span class="chip dim">已出快报 ${k.express_n||0}</span>`+
-    `<span class="chip ok">腾讯 PB/换手 已接</span>`+
-    `<span class="chip dim">${D._cached?"缓存":"实时"} · 数据截止 ${D.asof}</span>`;
-}
-
-function renderTelegraph(){
-  const tg=(D.telegraph||[]);
-  $("teleTs").textContent = tg.length? `更新 ${tg[0].time||""}` : "暂无";
-  $("teleBd").innerHTML = tg.length ? tg.slice(0,15).map(n =>
-    `<div class="tele-row"><span class="ts">${(n.time||"").slice(5,16)}</span><span>${esc(n.title||"")}</span></div>`
-  ).join("") : `<div class="tele-row"><span class="ts">--</span><span style="color:var(--ink-3)">财联社电报暂不可用</span></div>`;
-}
-}
-function renderHero(){
-  const k=D.kpi;
-  const cells=[
-    ["已披露预告", k.disclosed, D.period||""],
-    ["预喜 / 预警", `${k.good}<small> / ${k.bad}</small>`, `预喜率 ${(k.good_rate*100).toFixed(1)}%`],
-    ["高增(≥阈值)", `<span id="heroHi">${k.high_growth}</span>`, `同比增速≥${D.min_yoy}% 家数`],
-    ["主板红旗", k.main_flag, `真警报(Q1已证伪) ${k.main_high||0} 家最该排查`],
-  ];
-  $("hero").innerHTML=cells.map(c=>`<div class="stat" title="已披露预告:2026中报已发业绩预告的 unique 股票数(不含快报/半年报/未发预告股)。\n\n详细字段含义见 README 'disclosed 精确含义' 一节。"><div class="k">${c[0]}</div><div class="v">${c[1]}</div><div class="d">${c[2]}</div></div>`).join("");
-}
-
-function drawPano(){
-  const sd=D.style_dist;
-  CHARTS.style?.destroy();
-  CHARTS.style=new Chart($("styleBar"),{type:"bar",
-    data:{labels:sd.map(s=>s.style),datasets:[{data:sd.map(s=>s.n),backgroundColor:sd.map(s=>clsColor(s.cls)),borderRadius:3,barPercentage:.82}]},
-    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>`${c.raw} 家 (${(c.raw/D.kpi.disclosed*100).toFixed(1)}%)`}}},
-      scales:{x:{grid:{color:"#efeee8"},ticks:{precision:0}},y:{grid:{display:false},ticks:{font:{size:12,weight:"600"}}}}}});
-  const k=D.kpi;
-  CHARTS.donut?.destroy();
-  CHARTS.donut=new Chart($("donut"),{type:"doughnut",
-    data:{labels:["预喜","预警","中性"],datasets:[{data:[k.good,k.bad,k.neutral],backgroundColor:[RED,GRN,GRY],borderColor:"#fff",borderWidth:2}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:"62%",plugins:{legend:{position:"bottom"},
-      tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} 家 (${(c.raw/D.kpi.disclosed*100).toFixed(1)}%)`}}}}});
-  $("panoFn").innerHTML=`已披露 <b>${k.disclosed}</b> 家 · 预喜 <b style="color:${RED}">${k.good}</b> / 预警 <b style="color:${GRN}">${k.bad}</b> / 中性 ${k.neutral} · 全市场券商覆盖 ${k.universe} 家。`;
-}
-
-/* ---- ② 高增榜 (阈值滑块本地过滤) ---- */
-function renderRank(){
-  const min=+$("yoySlider").value, hideLB=$("hideLowbase").checked;
-  $("yoyLab").textContent=min;
-  let rows=D.good_list.filter(r=>{
-    if(hideLB && r.low_base) return false;
-    if(r.chg==null) return !hideLB; // 扭亏无同比
-    return r.chg>=min;
-  });
-  $("rankCount").textContent=`显示 ${rows.length} 只(榜单前100 · 全市场共 ${D.kpi.high_growth} 只≥50%)`;
-  $("rankBody").innerHTML=rows.map((r,i)=>{
-    const tcls=r.cls==="good"?"tag-good":r.cls==="bad"?"tag-bad":"tag-neu";
-    let exp='<span style="color:var(--ink-3)">—</span>';
-    if(r.express){
-      const vd=r.express.verdict, vc=vd==="超预告上限"?"pos":vd==="低于预告下限"?"neg":"";
-      exp=`<span class="${vc}" title="业绩快报实际净利同比">${gfmt(r.express.actual_yoy)}</span> <span class="ex-tag">${vd}</span>`;
-    }
-    let ann='<span style="color:var(--ink-3)">—</span>';
-    if(r.ann) ann=`<a href="javascript:void(0)" onclick="openAnn('${r.ann.art_code}','${esc(r.name)}');event.stopPropagation()" title="${esc(r.ann.title)}">📄查看</a> <a href="${r.ann.pdf_url}" target="_blank" onclick="event.stopPropagation()" title="下载PDF">⬇</a>`;
-    // 同花顺 EPS (机构均值, 对照)
-    let ths='<span style="color:var(--ink-3)">—</span>';
-    if(r.ths_eps){
-      const t=r.ths_eps;
-      ths=`${t.year}E <b>${t.mean.toFixed(2)}</b><span style="color:var(--ink-3);font-size:10px">/${t.n}家</span><br><span style="color:var(--ink-3);font-size:10px">${t.min.toFixed(1)}~${t.max.toFixed(1)}</span>`;
-    }
-    // 研报按钮
-    let rep='<span style="color:var(--ink-3)">—</span>';
-    if(r.reports && r.reports.length){
-      const top=r.reports[0];
-      rep=`<a href="javascript:void(0)" onclick="openRep('${r.code}');event.stopPropagation()" title="${esc(top.orgName)} | ${esc(top.title)}">📊 ${r.reports.length}</a>`;
-    }
-    // 估值列: PE(同业分位) / PB / 市值 / 换手
-    let val='<span style="color:var(--ink-3)">—</span>';
-    if(r.pe_ttm!=null){
-      const pc=r.pe_pctile;
-      const pcls=pc==null?'':pc>=80?'neg':pc<=25?'pos':'';
-      const pbTxt=r.pb!=null?` · PB ${r.pb}`:'';
-      const toTxt=r.turnover!=null?`换手 ${r.turnover}%`:'';
-      val=`<b>PE ${r.pe_ttm}</b>${pc!=null?`<span class="pctile ${pcls}" title="PE在同业分位">${pc}%</span>`:''}${pbTxt}`
-        +`<br><span style="color:var(--ink-3);font-size:10.5px">${r.mktcap_yi!=null?r.mktcap_yi+'亿':''} ${toTxt}</span>`;
-    }
-    return `<tr class="stk" data-i="${i}" onclick="toggleDetail(this,${i})">
-      <td>${i+1}</td>
-      <td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
-      <td><span class="badge ${boardCls[r.board]}">${r.board_zh}</span></td>
-      <td><span class="ind-pill">${esc(r.industry)}</span></td>
-      <td class="${tcls}">${r.type}</td>
-      <td class="num"><b>${gfmt(r.chg)}</b>${r.low_base?'<span class="lowbase">低基数</span>':''}</td>
-      <td class="num">${fmtWan(r.np_wan)}</td>
-      <td class="num" style="font-size:11.5px">${val}</td>
-      <td class="num" style="font-size:11.5px">${exp}</td>
-      <td style="font-size:11px">${ann}</td>
-      <td style="font-size:11px">${rep}</td></tr>`;
-  }).join("") || `<tr><td colspan="10" style="color:var(--ink-3);padding:20px;text-align:center">无满足阈值的公司,调低阈值试试</td></tr>`;
-  window._rankRows=rows;
-}
-function toggleDetail(tr,i){
-  const nx=tr.nextElementSibling;
-  if(nx && nx.classList.contains("detail")){ nx.remove(); return; }
-  const r=window._rankRows[i];
-  const row=document.createElement("tr"); row.className="detail";
-  let exLine="";
-  if(r.express) exLine=`<br><b>业绩快报(实际):</b> 净利同比 ${gfmt(r.express.actual_yoy)} · <b>${r.express.verdict}</b>(对比预告区间 ${gfmt(r.chg_lo)}~${gfmt(r.chg_hi)})`;
-  let annLine="";
-  if(r.ann) annLine=`<br><b>公告下载链接:</b> <a href="${r.ann.detail_url}" target="_blank">${esc(r.ann.title)}</a> <span style="color:var(--ink-3)">(${r.ann.date})</span>`;
-  let repLine="";
-  if(r.reports && r.reports.length){
-    repLine = `<br><b>📊 最新研报 (top ${r.reports.length}):</b><div style="margin-top:3px;margin-left:8px">` +
-      r.reports.map(x =>
-        `<div style="font-size:12px;padding:2px 0"><span style="color:var(--ink-3)">${x.publishDate}</span> · ${esc(x.orgName||'机构')} · ${esc((x.title||'').slice(0,60))}` +
-        (x.predictNextYearEps?` <span class="chip" style="font-size:10px;background:#eef1f6;color:var(--ink-2)">26E EPS ${Number(x.predictNextYearEps).toFixed(2)}</span>`:'')+
-        (x.pdf?` <a href="${x.pdf}" target="_blank" style="font-size:11px">PDF</a>`:'')+
-        `</div>`).join("") +
-      `</div>`;
+// ============ 菜单页 (首屏) ============
+async function showMenu() {
+  $("app").innerHTML = '<div class="loading"><span class="spinner"></span>加载菜单...</div>';
+  try {
+    const r = await fetch(API + "/api/summary");
+    const d = await r.json();
+    if (d.error) { $("app").innerHTML = '<div class="loading">❌ ' + d.error + '</div>'; return; }
+    STATE.summary = d;
+    $("asof").textContent = d.kpi.asof || "—";
+    $("ts").textContent = d.ts.slice(11, 19);
+    renderMenu(d);
+  } catch (e) {
+    $("app").innerHTML = '<div class="loading">❌ 网络错误: ' + e + '</div>';
   }
-  row.innerHTML=`<td colspan="11"><b>变动原因:</b> ${esc(r.reason)||"—"}<br><span style="color:var(--ink-3)">预告区间: ${gfmt(r.chg_lo)} ~ ${gfmt(r.chg_hi)} · 公告日 ${r.notice_date}</span>${exLine}${annLine}${repLine}</td>`;
+}
+
+function renderMenu(d) {
+  const k = d.kpi;
+  $("app").innerHTML = `
+    <div class="menu-kpis">
+      <div class="menu-kpi kpi-main"><div class="k">已披露预告</div>
+        <div class="v">${k.disclosed}</div>
+        <div class="d">2026 中报 · <span title="2026中报已发业绩预告的unique股票数(不含快报/半年报/未发预告股)">已披露 unique</span></div></div>
+      <div class="menu-kpi"><div class="k">预喜率 / 预喜·预警</div>
+        <div class="v">${(k.good_rate*100).toFixed(1)}%</div>
+        <div class="d">${k.good} / ${k.bad} 家</div></div>
+      <div class="menu-kpi"><div class="k">全市场 A股</div>
+        <div class="v">${k.universe}</div>
+        <div class="d">含 PE/市值 (datacenter 实测)</div></div>
+      <div class="menu-kpi"><div class="k">已出快报 / Q1已披露</div>
+        <div class="v">${k.express_n} / ${k.q1_n}</div>
+        <div class="d">快报实数 / Q1实际</div></div>
+    </div>
+    <div class="menu-grid">
+      <div class="menu-card" onclick="showModule('high_growth')">
+        <h3>② 高增榜</h3>
+        <p>业绩预告增速 ≥ 阈值 (默认 50%) 的预喜公司 top 100,按增速排序。</p>
+        <span class="badge">预估耗时 1-3s</span>
+        <span class="badge live">含 PE/PB/同花顺EPS/研报</span>
+      </div>
+      <div class="menu-card" onclick="showModule('redflag')">
+        <h3>⑤ 红旗榜 (反向筛选)</h3>
+        <p>主板一致预期隐含全年≥50% 却未披露预告 + Q1 实际增速做证伪 + 五类分诊。</p>
+        <span class="badge">预估耗时 1-2s</span>
+        <span class="badge red">196+ 真警报</span>
+      </div>
+      <div class="menu-card" onclick="showModule('industry')">
+        <h3>③ 行业分布</h3>
+        <p>已披露预告公司按东财行业聚合,看预喜集中在哪里 (景气行业)。</p>
+        <span class="badge">预估耗时 0.5s</span>
+        <span class="badge ok">${k.universe} 家全覆盖</span>
+      </div>
+      <div class="menu-card" onclick="showModule('vs_expect')">
+        <h3>④ vs 一致预期</h3>
+        <p>公司自报增速 vs 券商隐含增速,算 gap,标超预期/不及预期。</p>
+        <span class="badge">预估耗时 1s</span>
+        <span class="badge">双源交叉验证</span>
+      </div>
+      <div class="menu-card" onclick="showModule('telegraph')">
+        <h3>📡 财联社电报</h3>
+        <p>全市场实时电报 (7x24),披露季集中期看市场即时反应。</p>
+        <span class="badge live">实时 · 5分钟缓存</span>
+        <span class="badge">含 20 条</span>
+      </div>
+      <div class="menu-card" onclick="showModule('rule')">
+        <h3>ℹ️ 口径与规则</h3>
+        <p>disclosed=1830 的精确含义 / 红旗分诊阈值 / 数据源说明。</p>
+        <span class="badge">无数据加载</span>
+      </div>
+    </div>
+    ${d.telegraph && d.telegraph.length ? `
+    <div class="panel" style="margin-top:16px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:6px">
+        <span class="badge live" style="background:#fbe9e9;color:#c93535">●</span> 财联社电报 (top ${d.telegraph.length})
+      </div>
+      <div class="tele-bd">
+        ${d.telegraph.slice(0,10).map(n => `
+          <div class="tele-row"><span class="ts">${(n.time||"").slice(5,16)}</span>
+            <span>${esc(n.title||"")}</span></div>`).join("")}
+      </div>
+    </div>` : ""}
+  `;
+}
+
+// ============ 模块页 (按需加载) ============
+async function showModule(name) {
+  $("app").innerHTML = '<div class="loading"><span class="spinner"></span>加载 ' + name + ' 数据...</div>';
+  try {
+    if (name === "rule") return renderRule();
+    const r = await fetch(API + "/api/module/" + name);
+    const d = await r.json();
+    if (d.error) { $("app").innerHTML = '<div class="loading">❌ ' + d.error + '</div>'; return; }
+    if (name === "high_growth") return renderHighGrowth(d);
+    if (name === "redflag") return renderRedFlag(d);
+    if (name === "industry") return renderIndustry(d);
+    if (name === "vs_expect") return renderVsExpect(d);
+    if (name === "telegraph") return renderTelegraph(d);
+  } catch (e) {
+    $("app").innerHTML = '<div class="loading">❌ 网络错误: ' + e + '</div>';
+  }
+}
+
+function moduleHead(title, meta) {
+  return `<div class="module-head">
+    <button class="back" onclick="showMenu()">← 返回菜单</button>
+    <h2>${title}</h2>
+    <span class="meta">${meta||""}</span>
+  </div>`;
+}
+
+// === 高增榜 ===
+async function renderHighGrowth(d) {
+  $("app").innerHTML = moduleHead("② 高增榜", `${d.good_list.length} / ${d.kpi_subset.high_growth} 家`)
+    + '<div class="loading"><span class="spinner"></span>正在补 ths_eps / 研报 / 公告 ...</div>';
+
+  // 慢字段异步补
+  let slow = {};
+  try {
+    const r = await fetch(API + "/api/slow_fields");
+    const j = await r.json();
+    const map = new Map((j.good_list||[]).map(r => [r.code, r]));
+    d.good_list = d.good_list.map(r => Object.assign(r, map.get(r.code)||{}));
+  } catch (e) {}
+
+  $("app").innerHTML = moduleHead("② 高增榜", `${d.good_list.length} / ${d.kpi_subset.high_growth} 家`)
+    + renderHighGrowthTable(d.good_list);
+}
+
+function renderHighGrowthTable(rows) {
+  const tagOf = cls => cls==="good" ? '<span class="badge" style="background:#fbe9e9;color:#c93535">预喜</span>'
+                       : cls==="bad"  ? '<span class="badge" style="background:#e6f5e6;color:#0a7d0a">预警</span>'
+                                     : '<span class="badge">中性</span>';
+  return `<div class="tbl-scroll"><table>
+    <thead><tr>
+      <th>#</th><th>股票</th><th>板块</th><th>行业</th><th>类型</th>
+      <th class="num">同比增速</th><th class="num">净利(万)</th>
+      <th class="num">PE/市值</th><th class="num">同花顺EPS</th>
+      <th>研报</th><th>公告</th>
+    </tr></thead>
+    <tbody>${rows.map((r, i) => {
+      let ths = '<span style="color:var(--ink-3)">—</span>';
+      if (r.ths_eps) {
+        const t = r.ths_eps;
+        ths = `${t.year}E <b>${t.mean.toFixed(2)}</b><br><span style="color:var(--ink-3);font-size:10px">/${t.n}家</span>`;
+      }
+      let rep = '<span style="color:var(--ink-3)">—</span>';
+      if (r.reports && r.reports.length) rep = `<a href="javascript:void(0)" onclick="toggleDetail(this,${i});event.stopPropagation()" title="${esc(r.reports[0].orgName||'')}">📊${r.reports.length}</a>`;
+      let ann = '<span style="color:var(--ink-3)">—</span>';
+      if (r.ann) ann = `<a href="javascript:void(0)" onclick="openAnn('${r.ann.art_code}','${esc(r.name)}');event.stopPropagation()">📄查看</a>`;
+      const tcls = r.cls === "good" ? "tag-good" : r.cls === "bad" ? "tag-bad" : "tag-neu";
+      return `<tr class="stk" data-i="${i}" onclick="toggleDetail(this,${i})">
+        <td>${i+1}</td>
+        <td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
+        <td><span class="ind-pill">${esc(r.board_zh||"")}</span></td>
+        <td><span class="ind-pill">${esc(r.industry||"")}</span></td>
+        <td class="${tcls}">${r.type||""}</td>
+        <td class="num"><b>${gfmt(r.chg)}</b>${r.low_base?'<span style="color:#c07a1b;font-size:10px;margin-left:2px">⚠</span>':''}</td>
+        <td class="num">${fmtWan(r.np_wan)}</td>
+        <td class="num" style="font-size:11.5px">${r.pe_ttm!=null?'PE '+r.pe_ttm:'—'}<br><span style="color:var(--ink-3);font-size:10px">${r.mktcap_yi!=null?r.mktcap_yi+'亿':''}</span></td>
+        <td style="font-size:11.5px">${ths}</td>
+        <td style="font-size:11.5px">${rep}</td>
+        <td style="font-size:11.5px">${ann}</td>
+      </tr>`;
+    }).join("")}</tbody>
+  </table></div>`;
+}
+
+function toggleDetail(tr, i) {
+  const nx = tr.nextElementSibling;
+  if (nx && nx.classList.contains("detail")) { nx.remove(); return; }
+  const rows = window._lastRows || [];
+  const r = rows[i];
+  if (!r) return;
+  const row = document.createElement("tr");
+  row.className = "detail";
+  let html = `<td colspan="11"><b>变动原因:</b> ${esc(r.reason)||"—"}<br>
+    <span style="color:var(--ink-3)">预告区间: ${gfmt(r.chg_lo)} ~ ${gfmt(r.chg_hi)} · 公告日 ${r.notice_date}</span>`;
+  if (r.express) html += `<br><b>业绩快报(实际):</b> 净利同比 ${gfmt(r.express.actual_yoy)} · <b>${r.express.verdict}</b>`;
+  if (r.ann) html += `<br><b>公告下载链接:</b> <a href="${r.ann.detail_url}" target="_blank">${esc(r.ann.title)}</a> <span style="color:var(--ink-3)">(${r.ann.date})</span>`;
+  if (r.reports && r.reports.length) {
+    html += `<br><b>📊 最新研报:</b><div style="margin-left:8px;font-size:11.5px">` +
+      r.reports.map(x => `<div>${x.publishDate} · ${esc(x.orgName||'')} · ${esc((x.title||'').slice(0,60))}${x.pdf?` <a href="${x.pdf}" target="_blank">PDF</a>`:''}</div>`).join("") + '</div>';
+  }
+  html += '</td>';
+  row.innerHTML = html;
   tr.after(row);
-}
-$("yoySlider").addEventListener("input",renderRank);
-$("hideLowbase").addEventListener("change",renderRank);
-
-/* ---- ③ 行业分布 ---- */
-function drawIndustry(){
-  const ind=D.industry.slice(0,26);
-  $("indWrap").style.height=Math.max(340,ind.length*20+50)+"px";
-  CHARTS.ind?.destroy();
-  CHARTS.ind=new Chart($("indBar"),{type:"bar",
-    data:{labels:ind.map(i=>i.ind),datasets:[
-      {label:"预喜",data:ind.map(i=>i.good),backgroundColor:RED,stack:"s"},
-      {label:"中性",data:ind.map(i=>i.neutral),backgroundColor:GRY,stack:"s"},
-      {label:"预警",data:ind.map(i=>i.bad),backgroundColor:GRN,stack:"s"}]},
-    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:"top"},tooltip:{callbacks:{afterBody:items=>{const i=ind[items[0].dataIndex];
-        return `合计 ${i.total} · 预喜率 ${(i.good_rate*100).toFixed(0)}% · 净利中位 ${i.median_chg==null?"—":gfmt(i.median_chg)}`;}}}},
-      scales:{x:{stacked:true,grid:{color:"#efeee8"},ticks:{precision:0}},y:{stacked:true,grid:{display:false},ticks:{font:{size:11}}}}}});
+  window._lastRows = rows;
 }
 
-/* ---- ④ vs 一致预期 ---- */
-function drawExpect(){
-  const ve=D.vs_expect, cap=(v)=>Math.max(-100,Math.min(300,v));
-  CHARTS.exp?.destroy();
-  CHARTS.exp=new Chart($("expScatter"),{type:"scatter",
-    data:{datasets:[{data:ve.map(v=>({x:cap(v.expect),y:cap(v.chg),v})),
-      backgroundColor:ve.map(v=>v.verdict==="超预期"?RED:v.verdict==="不及预期"?GRN:GRY),pointRadius:4}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-      tooltip:{callbacks:{label:c=>{const v=c.raw.v;return `${v.name}(${v.industry}) 预告${gfmt(v.chg)} 预期${gfmt(v.expect)} 缺口${gfmt(v.gap)}`;}}}},
-      scales:{x:{title:{display:true,text:"分析师全年预期增速%"},grid:{color:"#efeee8"}},
-        y:{title:{display:true,text:"预告H1同比%"},grid:{color:"#efeee8"}}}}});
-  const st=D.vs_expect_stat;
-  $("expBody").innerHTML=ve.slice(0,60).map(v=>{
-    const vc=v.verdict==="超预期"?"verdict-beat":v.verdict==="不及预期"?"verdict-miss":"verdict-in";
-    return `<tr><td><b>${esc(v.name)}</b></td><td><span class="ind-pill">${esc(v.industry)}</span></td>
-      <td class="num">${gfmt(v.chg)}</td><td class="num">${gfmt(v.expect)}</td>
-      <td class="num ${v.gap>0?'pos':'neg'}">${gfmt(v.gap)}</td><td class="${vc}">${v.verdict}</td></tr>`;
-  }).join("");
-  $("expFn").innerHTML=`超预期 <b style="color:${RED}">${st.beat}</b> · 符合 ${st.inline} · 不及预期 <b style="color:${GRN}">${st.miss}</b>(表中按缺口升序,不及预期在前)。`;
+// === 红旗榜 ===
+function renderRedFlag(d) {
+  const main = (d.main || []).slice(0, 80);
+  return $("app").innerHTML = moduleHead("⑤ 红旗榜 (反向筛选)",
+    `${d.board_split.main} 主板强 / ${d.board_split.gem} 创科弱`)
+    + `<div class="panel">
+      <div style="margin-bottom:8px;color:var(--ink-3);font-size:12px">
+        一致预期隐含增速≥50% 但未披露预告的主板股 (强制披露规则触发条件)。
+        <span class="badge red">${d.board_split.main_high} 真警报·Q1已证伪</span>
+      </div>
+      <div class="tbl-scroll"><table>
+        <thead><tr><th>#</th><th>主板红旗</th><th>行业</th><th>分诊</th>
+        <th class="num">隐含预期</th><th class="num">Q1净利</th></tr></thead>
+        <tbody>${main.map((r, i) => `
+          <tr><td>${i+1}</td>
+            <td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span>
+              ${r.soft_q1?' <span class="badge red">Q1已证伪</span>':''}</td>
+            <td><span class="ind-pill">${esc(r.industry||'')}</span></td>
+            <td><span class="badge ${r.concern==='high'?'red':r.concern==='mid'?'warn':''}">${esc(r.triage||'')}</span></td>
+            <td class="num">${gfmt(r.expect)}</td>
+            <td class="num">${r.q1_yoy!=null?gfmt(r.q1_yoy):'—'}</td>
+          </tr>`).join("")}</tbody>
+      </table></div>
+    </div>`;
 }
 
-/* ---- ⑤ 红旗榜 ---- */
-function drawFlag(){
-  const fi=D.redflag.industry.slice(0,20), bs=D.redflag.board_split;
-  CHARTS.flag?.destroy();
-  CHARTS.flag=new Chart($("flagBar"),{type:"bar",
-    data:{labels:fi.map(i=>i.ind),datasets:[
-      {label:"主板(强)",data:fi.map(i=>i.main),backgroundColor:RED,stack:"s"},
-      {label:"创科(弱)",data:fi.map(i=>i.gem),backgroundColor:"#e0a44a",stack:"s"}]},
-    options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,plugins:{legend:{position:"top"}},
-      scales:{x:{stacked:true,grid:{color:"#efeee8"},ticks:{precision:0}},y:{stacked:true,grid:{display:false},ticks:{font:{size:11}}}}}});
-  $("flagBody").innerHTML=D.redflag.main.slice(0,80).map(r=>{
-    const cc={high:'tri-high',mid:'tri-mid',low:'tri-low'}[r.concern]||'tri-low';
-    const q1n=r.q1_yoy==null?'—':`<span class="${r.q1_yoy<20?'neg':''}">${gfmt(r.q1_yoy)}</span>`;
-    const q1r=r.q1_rev_yoy==null?'':` / <span class="${r.q1_rev_yoy<0?'neg':''}" style="font-size:10.5px">营${gfmt(r.q1_rev_yoy)}</span>`;
-    const diag=r.q1_diag?`<div style="font-size:10px;color:var(--ink-3)">${r.q1_diag}</div>`:'';
-    return `<tr><td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
-      <td><span class="ind-pill">${esc(r.industry)}</span></td>
-      <td><span class="tri ${cc}">${r.triage}</span>${diag}</td>
-      <td class="num">${gfmt(r.expect)}</td>
-      <td class="num">${q1n}${q1r}</td>
-      <td class="num">${r.broker_n||"—"}</td></tr>`;}).join("");
-  const td=D.redflag.triage_dist||[];
-  const distTxt=td.map(t=>`${t.label.split('·')[1]||t.label} <b>${t.n}</b>`).join(" · ");
-  $("flagFn").innerHTML=`主板红旗 <b style="color:${RED}">${bs.main}</b> 家 → 分诊: ${distTxt}。`
-    +`<br>其中 <b style="color:${RED}">真警报·Q1已证伪 ${bs.main_high||0} 家</b>(预期高但一季度已疲软/转亏, 最该排查) · 创科板另 ${bs.gem} 家(弱信号)。分诊标签仅辅助排查, 非投资建议。`;
+// === 行业分布 ===
+function renderIndustry(d) {
+  const ind = d.industry || [];
+  return $("app").innerHTML = moduleHead("③ 行业分布", `${ind.length} 个行业`)
+    + `<div class="panel"><div class="tbl-scroll"><table>
+      <thead><tr><th>行业</th><th class="num">预喜</th><th class="num">预警</th>
+        <th class="num">中性</th><th class="num">合计</th>
+        <th class="num">预喜率</th><th class="num">净利中位</th></tr></thead>
+      <tbody>${ind.map(i => `<tr>
+        <td>${esc(i.ind)}</td>
+        <td class="num" style="color:#c93535">${i.good}</td>
+        <td class="num" style="color:#0a7d0a">${i.bad}</td>
+        <td class="num">${i.neutral}</td>
+        <td class="num">${i.total}</td>
+        <td class="num">${(i.good_rate*100).toFixed(1)}%</td>
+        <td class="num">${i.median_chg!=null?gfmt(i.median_chg):'—'}</td>
+      </tr>`).join("")}</tbody>
+    </table></div></div>`;
 }
 
-function renderRule(){
-  const r=META.rule||{};
-  $("ruleList").innerHTML=(r.bullets||[]).map(b=>`<li>${esc(b)}</li>`).join("");
-  $("srcFn").innerHTML=`数据源: 东方财富 datacenter(业绩预告 RPT_PUBLIC_OP_NEWPREDICT / 一致预期与行业 RPT_WEB_RESPREDICT + RPT_VALUEANALYSIS_DET)。理论/预告为模型与公司自报口径,非投资建议。数据截止 <b>${META.asof}</b>。`;
+// === vs 一致预期 ===
+function renderVsExpect(d) {
+  const stat = d.stat || {};
+  return $("app").innerHTML = moduleHead("④ vs 一致预期",
+    `${stat.beat||0} 超预期 / ${stat.miss||0} 不及预期`)
+    + `<div class="panel"><div class="tbl-scroll"><table>
+      <thead><tr><th>#</th><th>股票</th><th>行业</th>
+        <th class="num">预告增速</th><th class="num">隐含预期</th>
+        <th class="num">缺口</th><th>判定</th></tr></thead>
+      <tbody>${(d.vs_expect||[]).slice(0,80).map((r, i) => `
+        <tr><td>${i+1}</td><td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
+          <td><span class="ind-pill">${esc(r.industry||'')}</span></td>
+          <td class="num">${gfmt(r.chg)}</td>
+          <td class="num">${gfmt(r.expect)}</td>
+          <td class="num">${(r.gap>0?'+':'')+r.gap.toFixed(1)}</td>
+          <td><span class="badge ${r.verdict==='超预期'?'ok':r.verdict==='不及预期'?'red':''}">${r.verdict}</span></td>
+        </tr>`).join("")}</tbody>
+    </table></div></div>`;
 }
 
-// 导航高亮
-const secs=[...document.querySelectorAll("section[id]")], links=[...document.querySelectorAll("#nav a")];
-if("IntersectionObserver" in window){
-  const ob=new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting)
-    links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")==="#"+e.target.id)); }),
-    {rootMargin:"-64px 0px -70% 0px"});
-  secs.forEach(s=>ob.observe(s));
+// === 财联社电报 ===
+function renderTelegraph(d) {
+  const tg = d.telegraph || [];
+  return $("app").innerHTML = moduleHead("📡 财联社电报", `top ${tg.length} · 5分钟刷新`)
+    + `<div class="panel"><div class="tele-bd">${tg.map(n => `
+      <div class="tele-row"><span class="ts">${(n.time||"").slice(5,16)}</span>
+        <span>${esc(n.title||"")}</span></div>`).join("")}
+    </div></div>`;
 }
 
-/* ---- 公告查看弹窗 ---- */
-window.openAnn=function(art_code, name){
+// === 规则说明 ===
+function renderRule() {
+  $("app").innerHTML = moduleHead("ℹ️ 口径与规则", "")
+    + `<div class="panel" style="line-height:1.8">
+      <h3 style="margin-top:0">disclosed = 1830 的精确含义</h3>
+      <p>截至查询时点,东财 datacenter <code>RPT_PUBLIC_OP_NEWPREDICT</code>
+         (REPORT_DATE='2026-06-30') 中所有已发过 2026 中报业绩预告的 unique 股票代码数。</p>
+      <p><b>包含</b>: 1830 家发过 2026 中报业绩预告<br>
+         <b>不含</b>: 业绩快报 (另表,33只)、完整半年报 (8月底)、业绩平稳未发预告 (~3500只)</p>
+      <h3>vs_expect 判定阈值</h3>
+      <p>gap = 预告中报同比 − 一致预期隐含增速<br>
+         超预期: gap ≥ +15pct · 不及预期: gap ≤ -15pct · 符合: 其他</p>
+      <h3>红旗榜分诊阈值</h3>
+      <p>真警报·Q1已证伪: 主板一致预期≥50% + Q1净利同比&lt;20%<br>
+         关注·逆行业沉默: 行业预喜率≥60% 但个股沉默<br>
+         低基数·预期虚高: 上年EPS≤0.10 或隐含增速&gt;500% (数学噪声)</p>
+      <h3>数据源</h3>
+      <p>东财 datacenter 公开 HTTP (免费) + 腾讯 qt.gtimg.cn (免费)<br>
+         全部零成本、无需 iFinD / 无需登录 / 无需 token</p>
+    </div>`;
+}
+
+// ============ 公告弹窗 ============
+window.openAnn = function(art_code, name) {
   $("annTitle").textContent = name + " · 公告全文";
-  $("annMeta").textContent = "加载中…";
-  $("annBody").textContent = "正在拉取公告全文,请稍候…";
+  $("annBody").textContent = "加载中…";
   $("annPdfBtn").href = `https://pdf.dfcfw.com/pdf/H2_${art_code}_1.pdf`;
   $("annDetailBtn").href = "#";
   $("annModal").classList.add("on");
   fetch(API + "/announcement?art_code=" + encodeURIComponent(art_code))
-    .then(r=>r.json()).then(d=>{
-      if(d.error){ $("annBody").textContent = "加载失败: " + d.error; return; }
+    .then(r => r.json()).then(d => {
+      if (d.error) { $("annBody").textContent = "加载失败: " + d.error; return; }
       $("annTitle").textContent = d.title || (name + " · 公告");
-      $("annMeta").textContent = d.date ? "公告日 " + d.date : "";
       $("annBody").textContent = d.content || "（无内容）";
-      if(d.detail_url) $("annDetailBtn").href = d.detail_url;
-    }).catch(e=>{ $("annBody").textContent = "网络错误: " + e; });
+      if (d.detail_url) $("annDetailBtn").href = d.detail_url;
+    }).catch(e => { $("annBody").textContent = "网络错误: " + e; });
 };
-window.closeAnn=function(){ $("annModal").classList.remove("on"); };
+window.closeAnn = function() { $("annModal").classList.remove("on"); };
 
-boot();
+// ============ 数字格式化 ============
+const gfmt = v => v == null ? "—" : (v > 0 ? "+" : "") + Number(v).toFixed(1) + "%";
+const fmtWan = w => w == null ? "—" : (Math.abs(w) >= 10000 ? (w/10000).toFixed(1) + "亿" : Math.round(w) + "万");
+
+// ============ 启动 ============
+const STATE = {};
+showMenu();
 </script>
 </body>
 </html>
