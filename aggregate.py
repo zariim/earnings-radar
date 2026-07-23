@@ -1,5 +1,5 @@
 """
-aggregate.py — 组装 arayaquant 同款五视图 JSON
+aggregate.py — 组装业绩预告筛选五视图 JSON
 ==============================================
 build_panorama(min_yoy) 返回:
   ① kpi + style_dist        (预告全景)

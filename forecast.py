@@ -10,7 +10,7 @@ import em
 
 REPORT_NAME = "RPT_PUBLIC_OP_NEWPREDICT"
 
-# PREDICT_TYPE → 情绪类别 (对标 arayaquant clsColor)
+# PREDICT_TYPE → 情绪类别 (预喜/预警/中性)
 GOOD_TYPES = {"预增", "略增", "续盈", "扭亏"}
 BAD_TYPES = {"预减", "略减", "首亏", "续亏", "增亏"}
 # 其余(减亏/不确定/持平/预平) → neutral (减亏=亏损收窄, 方向改善但仍亏, 归中性)
