@@ -8,17 +8,24 @@ consensus.py — 券商一致预期 + 隐含增速 + 行业标签
 行业标签直接取 INDUSTRY_BOARD (东财自有行业分类)。
 """
 import em
+import dcache
 
 REPORT_NAME = "RPT_WEB_RESPREDICT"
+_TTL = 6 * 3600
 
 
 def fetch_all():
-    """整表拉全市场一致预期。"""
+    """整表拉全市场一致预期 (磁盘缓存 6h)。"""
+    cached = dcache.get(REPORT_NAME, {"_q": "fetch_all"})
+    if cached is not None:
+        return cached
     cols = ("SECURITY_CODE,SECURITY_NAME_ABBR,RATING_ORG_NUM,RATING_BUY_NUM,"
             "RATING_ADD_NUM,EPS1,EPS2,EPS3,YEAR1,YEAR2,YEAR_MARK1,YEAR_MARK2,"
             "INDUSTRY_BOARD")
-    return em.paginate(REPORT_NAME, columns=cols, page_size=500,
+    rows = em.paginate(REPORT_NAME, columns=cols, page_size=500,
                        sort_col="SECURITY_CODE", sort_type=1)
+    dcache.put(REPORT_NAME, {"_q": "fetch_all"}, rows)
+    return rows
 
 
 def _implied_yoy(eps_a, eps_e):
@@ -31,7 +38,10 @@ def _implied_yoy(eps_a, eps_e):
 
 
 def build():
-    """返回 dict: code -> 一致预期信息。"""
+    """返回 dict: code -> 一致预期信息 (磁盘缓存 6h)。"""
+    cached = dcache.get(REPORT_NAME, {"_q": "build_dict"})
+    if cached is not None:
+        return cached
     rows = fetch_all()
     out = {}
     for r in rows:
@@ -51,6 +61,7 @@ def build():
             "buy": r.get("RATING_BUY_NUM"),
             "add": r.get("RATING_ADD_NUM"),
         }
+    dcache.put(REPORT_NAME, {"_q": "build_dict"}, out)
     return out
 
 
@@ -77,12 +88,15 @@ def _latest_trade_date():
 def build_industry_map(trade_date=None):
     """
     返回 {code -> {'industry','pe_ttm','mktcap'}}, 覆盖全市场。
-    industry = 东财行业 BOARD_NAME。
+    industry = 东财行业 BOARD_NAME。磁盘缓存 6h。
     """
     if trade_date is None:
         trade_date = _latest_trade_date()
     if not trade_date:
         return {}
+    cached = dcache.get(_VAL_REPORT, {"_q": "industry", "date": trade_date})
+    if cached is not None:
+        return cached
     cols = "SECURITY_CODE,SECURITY_NAME_ABBR,BOARD_NAME,PE_TTM,TOTAL_MARKET_CAP"
     rows = em.paginate(_VAL_REPORT, filter_str=f"(TRADE_DATE='{trade_date}')",
                        columns=cols, page_size=500, sort_col="SECURITY_CODE",
@@ -97,6 +111,7 @@ def build_industry_map(trade_date=None):
             "pe_ttm": r.get("PE_TTM"),
             "mktcap": r.get("TOTAL_MARKET_CAP"),
         }
+    dcache.put(_VAL_REPORT, {"_q": "industry", "date": trade_date}, out)
     return out
 
 

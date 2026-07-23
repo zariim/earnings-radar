@@ -221,14 +221,23 @@ Chart.defaults.font.family='system-ui,"PingFang SC","Microsoft YaHei",sans-serif
 Chart.defaults.font.size=11; Chart.defaults.color=INK3;
 
 function boot(){
-  fetch(API+"/panorama?min_yoy=50").then(r=>r.json()).then(d=>{
+  fetch(API+"/panorama?min_yoy=50&fast=1").then(r=>r.json()).then(d=>{
     if(d.error){ $("loading").textContent="加载失败: "+d.error; return; }
     D=d; $("loading").style.display="none";
     fetch(API+"/meta").then(r=>r.json()).then(m=>{ META=m; renderRule(); });
     $("asof").textContent=d.asof||"—";
-    renderChips(); renderHero(); renderTelegraph();
+    renderChips(); renderHero();
     drawPano(); drawIndustry(); drawExpect(); drawFlag();
     renderRank(); // uses slider default 50
+    // 后台异步拉慢字段 (ths_eps / reports / ann / tencent / telegraph)
+    fetch(API+"/slow_fields").then(r=>r.json()).then(slow=>{
+      if(slow.error) return;
+      // 合并 slow → fast 视图
+      const map=new Map(slow.good_list.map(r=>[r.code,r]));
+      D.good_list=D.good_list.map(r=>Object.assign(r,map.get(r.code)||{}));
+      D.telegraph=slow.telegraph||[];
+      renderTelegraph(); renderRank();
+    }).catch(()=>{});
   }).catch(e=>{ $("loading").textContent="网络错误: "+e; });
 }
 

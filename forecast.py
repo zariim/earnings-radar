@@ -7,6 +7,7 @@ forecast.py — 全市场业绩预告拉取 + 归一化
 - rank_high_growth(): 按同比增速阈值筛高增
 """
 import em
+import dcache
 
 REPORT_NAME = "RPT_PUBLIC_OP_NEWPREDICT"
 
@@ -33,12 +34,17 @@ def _mid(lo, hi):
 
 
 def fetch_universe(report_date="2026-06-30"):
-    """拉全市场预告原始行 (含归母/扣非等多行)。
+    """拉全市场预告原始行 (含归母/扣非等多行, 磁盘缓存 6h)。
     重要: 不要传 sort_col/sortType — datacenter 在 sort 模式下会重复返回部分行并漏数据,
     导致 unique code 数被腰斩。实测不传 sort_col 时拿全 1830+ 只, 传了只剩 992。"""
+    cached = dcache.get(REPORT_NAME, {"_q": "universe", "date": report_date})
+    if cached is not None:
+        return cached
     flt = f"(REPORT_DATE='{report_date}')"
-    return em.paginate(REPORT_NAME, filter_str=flt, page_size=500,
+    rows = em.paginate(REPORT_NAME, filter_str=flt, page_size=500,
                        max_pages=60)
+    dcache.put(REPORT_NAME, {"_q": "universe", "date": report_date}, rows)
+    return rows
 
 
 def normalize(rows):

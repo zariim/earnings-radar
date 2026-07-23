@@ -7,12 +7,16 @@ q1.py — 一季报实际增速 (用于红旗榜证伪与恶化结构分析)
 - 恶化结构: 营收也降(需求走弱) vs 只净利降(毛利/费用承压)
 """
 import em
+import dcache
 
 REPORT_NAME = "RPT_LICO_FN_CPD"
 
 
 def fetch_q1(q1_date="2026-03-31"):
-    """返回 {code -> {'np_yoy':净利同比%, 'rev_yoy':营收同比%}}, 覆盖全市场。"""
+    """返回 {code -> {'np_yoy':净利同比%, 'rev_yoy':营收同比%}}, 覆盖全市场 (磁盘缓存 6h)。"""
+    cached = dcache.get(REPORT_NAME, {"_q": "q1", "date": q1_date})
+    if cached is not None:
+        return cached
     rows = em.paginate(REPORT_NAME, filter_str=f"(REPORTDATE='{q1_date}')",
                        columns="SECURITY_CODE,SJLTZ,YSTZ", page_size=500,
                        sort_col="SECURITY_CODE", sort_type=1, max_pages=15)
@@ -25,6 +29,7 @@ def fetch_q1(q1_date="2026-03-31"):
             "np_yoy": round(r["SJLTZ"], 1) if r.get("SJLTZ") is not None else None,
             "rev_yoy": round(r["YSTZ"], 1) if r.get("YSTZ") is not None else None,
         }
+    dcache.put(REPORT_NAME, {"_q": "q1", "date": q1_date}, out)
     return out
 
 

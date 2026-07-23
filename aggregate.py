@@ -120,8 +120,21 @@ def _triage_redflag(implied, eps_a, q1np, q1rev, ind_rate, has_express):
     return "待观察·高预期未表态", "mid", q1_diag
 
 
-def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True):
-    """一次拉全量, 返回 (panorama, meta) 两个 dict。"""
+def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True,
+          with_slow=True):
+    """一次拉全量, 返回 (panorama, meta) 两个 dict。
+    with_slow=False: 跳过公告/同花顺EPS/研报/腾讯行情 (首屏秒开, ~10s → ~5s)。
+    """
+    raw = forecast.fetch_universe(report_date)
+    norm = forecast.normalize(raw)
+    cmap = consensus.build()
+    imap = consensus.build_industry_map()
+    exmap = express.fetch_all(report_date)   # 业绩快报(实际值)
+    q1map = q1.fetch_q1(Q1_DATE)             # 一季报实际增速(净利+营收, 红旗证伪)
+    pe_pctile = _build_pe_pctile(imap)       # 同业 PE 分位
+    _enrich_industry(norm, imap, cmap)
+
+    disclosed_codes = {r["code"] for r in norm}
     raw = forecast.fetch_universe(report_date)
     norm = forecast.normalize(raw)
     cmap = consensus.build()
@@ -152,49 +165,56 @@ def build(min_yoy=50.0, report_date=REPORT_DATE, with_announce=True):
         row["pe_ttm"] = round(v["pe_ttm"], 1) if v.get("pe_ttm") else None
         row["mktcap_yi"] = round(v["mktcap"] / 1e8, 1) if v.get("mktcap") else None
         row["pe_pctile"] = pe_pctile(code)
-    # 公告链接 (仅榜单前100, 带磁盘缓存)
-    if with_announce:
-        anns = announce.enrich([r["code"] for r in good_list])
+    # 公告 / 同花顺EPS / 研报 / 腾讯行情 — slow 字段, with_slow=False 时跳过
+    if with_slow:
+        if with_announce:
+            anns = announce.enrich([r["code"] for r in good_list])
+            for row in good_list:
+                row["ann"] = anns.get(row["code"])
+        # 同花顺一致预期 EPS — 只对已有一致预期覆盖的股(避免无谓请求), 并行拉
+        import concurrent.futures as _cf
+        ths_targets = [r["code"] for r in good_list
+                       if cmap.get(r["code"], {}).get("implied_yoy") is not None]
+        thsep_data = {}
+        if ths_targets:
+            with _cf.ThreadPoolExecutor(max_workers=8) as ex:
+                for code, rows in zip(ths_targets,
+                                      ex.map(thsep.fetch, ths_targets)):
+                    thsep_data[code] = rows
         for row in good_list:
-            row["ann"] = anns.get(row["code"])
-    # 同花顺一致预期 EPS — 只对已有一致预期覆盖的股(避免无谓请求), 并行拉
-    import concurrent.futures as _cf
-    ths_targets = [r["code"] for r in good_list
-                   if cmap.get(r["code"], {}).get("implied_yoy") is not None]
-    thsep_data = {}
-    if ths_targets:
-        with _cf.ThreadPoolExecutor(max_workers=8) as ex:
-            for code, rows in zip(ths_targets,
-                                  ex.map(thsep.fetch, ths_targets)):
-                thsep_data[code] = rows
-    for row in good_list:
-        ths_eps_list = thsep_data.get(row["code"]) or []
-        if ths_eps_list:
-            cur_year = max(ths_eps_list, key=lambda x: x["year"])
-            row["ths_eps"] = {"year": cur_year["year"], "n": cur_year["n"],
-                              "mean": cur_year["mean"], "min": cur_year["min"],
-                              "max": cur_year["max"]}
-        else:
-            row["ths_eps"] = None
-    # 东财最新研报 (top 3, 并行)
-    rep_targets = [r["code"] for r in good_list[:60]]  # 只前 60 只拉研报
-    rep_data = {}
-    if rep_targets:
-        with _cf.ThreadPoolExecutor(max_workers=6) as ex:
-            for code, reps in zip(rep_targets,
-                                  ex.map(lambda c: (c, research.fetch(c, page_size=3, max_pages=1)), rep_targets)):
-                rep_data[code] = reps[1][:3] if isinstance(reps, tuple) else []
-    for row in good_list:
-        row["reports"] = rep_data.get(row["code"], [])
-    # 腾讯财经实时行情补 PB / 换手 (免费, 不限频)
-    tq = tencent.quotes([r["code"] for r in good_list])
-    for row in good_list:
-        v = tq.get(row["code"])
-        if v:
-            row["pb"] = v["pb"]
-            row["turnover"] = v["turnover"]
-            row["price"] = v["price"]
-            row["change_pct"] = v["change_pct"]
+            ths_eps_list = thsep_data.get(row["code"]) or []
+            if ths_eps_list:
+                cur_year = max(ths_eps_list, key=lambda x: x["year"])
+                row["ths_eps"] = {"year": cur_year["year"], "n": cur_year["n"],
+                                  "mean": cur_year["mean"], "min": cur_year["min"],
+                                  "max": cur_year["max"]}
+            else:
+                row["ths_eps"] = None
+        # 东财最新研报 (top 3, 并行)
+        rep_targets = [r["code"] for r in good_list[:60]]
+        rep_data = {}
+        if rep_targets:
+            with _cf.ThreadPoolExecutor(max_workers=6) as ex:
+                for code, reps in zip(rep_targets,
+                                      ex.map(lambda c: (c, research.fetch(c, page_size=3, max_pages=1)), rep_targets)):
+                    rep_data[code] = reps[1][:3] if isinstance(reps, tuple) else []
+        for row in good_list:
+            row["reports"] = rep_data.get(row["code"], [])
+        # 腾讯财经实时行情补 PB / 换手
+        tq = tencent.quotes([r["code"] for r in good_list])
+        for row in good_list:
+            v = tq.get(row["code"])
+            if v:
+                row["pb"] = v["pb"]
+                row["turnover"] = v["turnover"]
+                row["price"] = v["price"]
+                row["change_pct"] = v["change_pct"]
+    else:
+        # fast mode: 把 slow 字段填 None, dashboard 显示"加载中"
+        for row in good_list:
+            for k in ("ths_eps", "reports", "ann", "pb", "turnover",
+                      "price", "change_pct"):
+                row.setdefault(k, None)
     bad_sorted = sorted([r for r in bad if r["chg"] is not None],
                         key=lambda x: x["chg"])
     bad_list = [_slim(r) for r in bad_sorted[:100]]

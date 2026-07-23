@@ -41,18 +41,34 @@ class Cache:
         self.slots = {}   # min_yoy -> (ts, panorama, meta)
         self.lock = threading.Lock()
 
-    def get(self, min_yoy, force=False):
+    def get(self, min_yoy, force=False, fast=False):
         key = round(float(min_yoy), 1)
         with self.lock:
             hit = self.slots.get(key)
             if hit and not force and (time.time() - hit[0]) < TTL:
-                return hit[1], hit[2], True
+                # 命中缓存, 按需切掉 slow 字段
+                p = self._strip_slow(hit[1]) if fast else hit[1]
+                return p, hit[2], True
         # 慢路径: 重新构建 (锁外, 避免阻塞其它请求)
-        panorama, meta = aggregate.build(min_yoy=key)
+        panorama, meta = aggregate.build(min_yoy=key, with_slow=not fast)
         with self.lock:
             self.slots[key] = (time.time(), panorama, meta)
         self._snapshot(key, panorama, meta)
+        if fast:
+            panorama = self._strip_slow(panorama)
         return panorama, meta, False
+
+    def _strip_slow(self, panorama):
+        """切掉 slow 字段 (ths_eps, reports, ann, tencent, telegraph) 用于首屏快返。"""
+        p = dict(panorama)
+        p["good_list"] = [
+            {k: v for k, v in r.items() if k not in
+             ("ths_eps", "reports", "ann", "pb", "turnover", "price", "change_pct")}
+            for r in p.get("good_list", [])
+        ]
+        p["telegraph"] = []
+        p["fast_mode"] = True
+        return p
 
     def _snapshot(self, key, panorama, meta):
         try:
@@ -116,12 +132,25 @@ def index():
 def api_panorama():
     min_yoy = request.args.get("min_yoy", "50")
     force = request.args.get("refresh") == "1"
+    fast = request.args.get("fast") == "1"
     try:
-        panorama, meta, cached = CACHE.get(min_yoy, force=force)
+        panorama, meta, cached = CACHE.get(min_yoy, force=force, fast=fast)
     except Exception as e:  # noqa
         return jsonify({"error": str(e)}), 500
     panorama["_cached"] = cached
     return jsonify(panorama)
+
+
+@app.route("/api/slow_fields")
+def api_slow_fields():
+    """后台异步补: 同花顺EPS / 研报 / 公告 / 腾讯行情 / 财联社电报。
+    不缓存, 每次调用重新拉, dashboard 首屏后调用。"""
+    try:
+        panorama, _ = aggregate.build(min_yoy=50.0, with_announce=True, with_slow=True)
+    except Exception as e:  # noqa
+        return jsonify({"error": str(e)}), 500
+    return jsonify({"good_list": panorama.get("good_list", []),
+                    "telegraph": panorama.get("telegraph", [])})
 
 
 @app.route("/api/meta")

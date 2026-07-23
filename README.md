@@ -133,13 +133,15 @@ dashboard disclosed     1830
 - ✗ 业绩平稳没发预告的 ~3500 只 A 股
 - ✗ 跨期预告 (2025 年报、2025 三季报, 另一组 REPORT_DATE)
 
-**与"全 A 股 ~5340 家"的关系**:
+**与"全 A 股 ~5530 家"的关系** (实测 2026-07-23):
 ```
-5340 家 A 股
-  ├─ 1830 家已发 2026 中报业绩预告 (本工具 covered)  34%
+5530 家 A 股 (datacenter RPT_VALUEANALYSIS_DET 全市场 unique)
+  ├─ 1830 家已发 2026 中报业绩预告 (本工具 covered)  33%
   ├─ 33 家 发了 2026 中报业绩快报     (本工具 covered, 另查)
-  └─ 3477 家 业绩平稳未发预告         (本工具 not covered)
+  └─ 3667 家 业绩平稳未发预告         (本工具 not covered)
 ```
+
+> "全 A 股 5530 家" 是 2026-07-23 实测数据 (东方财富 datacenter RPT_VALUEANALYSIS_DET 全市场 unique 股票代码数), 与中证/沪深交易所统计口径一致。A 股总数随 IPO 持续增加, 不同时点可能有 ±20 家差异。
 
 如果你想让"已披露"覆盖率更广(包含快报),看下方「扩展 disclosed 范围」一节。
 
@@ -156,7 +158,7 @@ fc_codes = {r["code"] for r in forecast.normalize(forecast.fetch_universe(REPORT
 disclosed = len(fc_codes | ex_codes)  # 预告 OR 快报
 ```
 
-适用场景: 8 月底完整半年报陆续披露后, 可以再加半年报(覆盖几乎全部 5340 家)。
+适用场景: 8 月底完整半年报陆续披露后, 可以再加半年报(覆盖几乎全部 5530 家)。
 
 ## 🙏 致谢
 
