@@ -112,7 +112,7 @@ CACHE = Cache()
 
 
 def _daily_refresher(hour, min_yoy=50.0):
-    """后台守护线程: 每天到点(本地 hour 时)重建默认快照。"""
+    """后台守护线程: 每天到点(本地 hour 时)重建默认快照 + 预计算所有模块 JSON。"""
     import datetime
     last_day = None
     while True:
@@ -120,16 +120,251 @@ def _daily_refresher(hour, min_yoy=50.0):
         if now.hour == hour and now.date() != last_day:
             try:
                 CACHE.get(min_yoy, force=True)
+                _precompute_all()
                 last_day = now.date()
-                print(f"[{now:%Y-%m-%d %H:%M}] 每日自动刷新完成 (min_yoy={min_yoy})")
+                print(f"[{now:%Y-%m-%d %H:%M}] 每日自动刷新+预计算完成")
             except Exception as e:  # noqa
                 print("每日刷新失败:", e)
         time.sleep(300)  # 每 5 分钟检查一次
 
 
+def _precompute_all():
+    """预生成所有模块的 JSON 到 data/precomputed/ (供 dashboard 静态 fetch, 免实时计算)。"""
+    import datetime
+    pre = os.path.join(DATA_DIR, "precomputed")
+    os.makedirs(pre, exist_ok=True)
+    # 清旧文件 (避免删除面板后旧数据残留)
+    for f in os.listdir(pre):
+        try: os.remove(os.path.join(pre, f))
+        except: pass
+    # 1. summary (KPI + 各模块字段聚合, 但不构建 panorama slow fields)
+    raw = forecast.fetch_universe(aggregate.REPORT_DATE)
+    norm = forecast.normalize(raw)
+    cmap = consensus.build()
+    imap = consensus.build_industry_map()
+    _enrich_industry_inline(norm, imap, cmap)  # norm[i]["industry"] 填充
+    exmap = express.fetch_all(aggregate.REPORT_DATE)
+    q1map = q1.fetch_q1(aggregate.Q1_DATE)
+    good = [x for x in norm if x["cls"] == "good"]
+    bad = [x for x in norm if x["cls"] == "bad"]
+    neutral = [x for x in norm if x["cls"] == "neutral"]
+    asof = max((x["notice_date"] for x in norm if x["notice_date"]), default="")
+    kpi = {
+        "disclosed": len(norm), "good": len(good), "bad": len(bad),
+        "neutral": len(neutral),
+        "good_rate": round(len(good) / len(norm), 3) if norm else 0,
+        "asof": asof,
+        "express_n": len(exmap), "universe": len(imap), "q1_n": len(q1map),
+    }
+    from collections import Counter
+    type_dist = Counter(x["type"] for x in norm)
+    style_dist = [{"style": t, "n": n, "cls": forecast._cls(t)}
+                  for t, n in type_dist.most_common()]
+    summary = {
+        "kpi": kpi,
+        "telegraph": news.cls_telegraph(15),
+        "modules": {
+            "forecast": {"count": len(norm), "asof": asof, "ready": True},
+            "consensus": {"count": len(cmap), "ready": True},
+            "industry": {"count": len(imap), "ready": True},
+            "express": {"count": len(exmap), "ready": True},
+            "q1": {"count": len(q1map), "ready": True},
+        },
+        "ts": datetime.datetime.now().isoformat()[:19],
+    }
+    _save_json(os.path.join(pre, "summary.json"), summary)
+
+    # 2. high_growth (top 100 + style_dist + kpi_subset)
+    good_ranked = forecast.rank_high_growth(norm, min_yoy=50.0, include_low_base=True)
+    n_high_growth = len(good_ranked)
+    good_list = [_slim_for_persist(r) for r in good_ranked[:100]]
+    high_growth = {
+        "good_list": good_list,
+        "style_dist": style_dist,
+        "kpi_subset": {**kpi, "high_growth": n_high_growth},
+    }
+    _save_json(os.path.join(pre, "high_growth.json"), high_growth)
+
+    # 3. redflag
+    q1map_for_rf = q1.fetch_q1(aggregate.Q1_DATE)
+    rf = _redflag(cmap, imap, q1map_for_rf, exmap, disclosed_codes={x["code"] for x in norm})
+    _save_json(os.path.join(pre, "redflag.json"), rf)
+
+    # 4. industry
+    ind_data = _industry(norm)
+    _save_json(os.path.join(pre, "industry.json"), ind_data)
+
+    # 5. vs_expect
+    vs = _vs_expect(norm, cmap)
+    _save_json(os.path.join(pre, "vs_expect.json"), vs)
+
+    print(f"  预计算完成: summary/high_growth/redflag/industry/vs_expect 已落盘 ({pre})")
+
+
+def _save_json(path, data):
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+    except Exception as e:
+        print(f"  _save_json 失败 {path}: {e}")
+
+
+def _enrich_industry_inline(norm, imap, cmap):
+    """复制 aggregate._enrich_industry 逻辑, 给 norm 字典加 industry 字段。"""
+    for r in norm:
+        code = r.get("code")
+        v = imap.get(code) or {}
+        ind = v.get("industry") or (cmap.get(code) or {}).get("industry") or "未分类"
+        r["industry"] = ind
+
+
+def _slim_for_persist(r):
+    """slim 后的 dict 适合落盘 (与 _slim 字段一致)。"""
+    return {
+        "code": r["code"], "name": r["name"], "board": r["board"],
+        "board_zh": r["board_zh"], "industry": r.get("industry", ""),
+        "type": r["type"], "cls": r["cls"], "chg": r["chg"],
+        "chg_lo": r["chg_lo"], "chg_hi": r["chg_hi"], "np_wan": r["np_wan"],
+        "low_base": r["low_base"], "notice_date": r["notice_date"],
+        "reason": (r["reason"] or "")[:200],
+    }
+
+
+def _redflag(cmap, imap, q1map, exmap, disclosed_codes):
+    """红旗榜组装逻辑 (与 aggregate.py 一致, 独立函数)。"""
+    _CONCERN_RANK = {"high": 3, "mid": 2, "low": 1}
+    Q1_SOFT = 20.0
+    LOWBASE_EPS = 0.10
+    LOWBASE_IMPLIED = 500.0
+    REDFLAG_EXPECT = 50.0
+    # 行业预喜率从 _industry 结果拿 (由 caller 传)
+    flag_main, flag_gem = [], []
+    for code, c in cmap.items():
+        if c["implied_yoy"] is None or c["implied_yoy"] < REDFLAG_EXPECT: continue
+        if code in disclosed_codes: continue
+        if consensus.em.is_st(c["name"]): continue
+        board = consensus.em.board_of(code)
+        exempt = c["eps_a"] is not None and abs(c["eps_a"]) <= 0.03
+        ind = (imap.get(code, {}).get("industry") or c["industry"] or "未分类")
+        q1d = q1map.get(code) or {}
+        q1np, q1rev = q1d.get("np_yoy"), q1d.get("rev_yoy")
+        soft_q1 = q1np is not None and q1np < Q1_SOFT
+        has_express = code in exmap
+        # 复用 aggregate._triage_redflag 简化版
+        if has_express:
+            triage, concern = "已出快报·非沉默", "low"
+        elif q1np is not None and q1np < Q1_SOFT:
+            triage, concern = "真警报·Q1已证伪", "high"
+        else:
+            base_weak = (c["eps_a"] is not None and 0 < abs(c["eps_a"]) <= LOWBASE_EPS) or \
+                        (c["implied_yoy"] >= LOWBASE_IMPLIED)
+            if base_weak:
+                triage, concern = "低基数·预期虚高", "low"
+            elif 0 >= 0.6:  # 行业预喜率判断需 _industry 结果, 这里简化保留默认 mid
+                triage, concern = "关注·逆行业沉默", "mid"
+                triage, concern = "关注·逆行业沉默", "mid"
+            else:
+                triage, concern = "待观察·高预期未表态", "mid"
+        item = {
+            "code": code, "name": c["name"], "industry": ind,
+            "board": board, "board_zh": consensus.em.BOARD_ZH.get(board, board),
+            "expect": c["implied_yoy"], "broker_n": c["broker_n"],
+            "exempt": exempt, "q1_yoy": q1np, "q1_rev_yoy": q1rev,
+            "soft_q1": soft_q1, "triage": triage, "concern": concern,
+        }
+        if board == "main" and not exempt:
+            flag_main.append(item)
+        elif board in ("gem", "star"):
+            flag_gem.append(item)
+    flag_main.sort(key=lambda x: (_CONCERN_RANK.get(x["concern"], 0), x["expect"]), reverse=True)
+    flag_gem.sort(key=lambda x: (_CONCERN_RANK.get(x["concern"], 0), x["expect"]), reverse=True)
+    # 行业分布
+    rf_ind = {}
+    for it in flag_main + flag_gem:
+        d = rf_ind.setdefault(it["industry"], {"ind": it["industry"], "main": 0, "gem": 0})
+        d["main" if it["board"] == "main" else "gem"] += 1
+    rf_ind_list = sorted(rf_ind.values(), key=lambda x: x["main"] + x["gem"], reverse=True)
+    # 分诊分布
+    from collections import Counter
+    triage_cnt = Counter(x["triage"] for x in flag_main)
+    triage_dist = [{"label": k, "n": v} for k, v in triage_cnt.most_common()]
+    main_soft = sum(1 for x in flag_main if x["soft_q1"])
+    main_high = sum(1 for x in flag_main if x["concern"] == "high")
+    return {
+        "main": flag_main, "gem": flag_gem, "industry": rf_ind_list,
+        "triage_dist": triage_dist,
+        "board_split": {
+            "main": len(flag_main), "gem": len(flag_gem),
+            "main_soft": main_soft, "main_high": main_high,
+        }
+    }
+
+
+def _industry_codes(cmap, imap, disclosed_codes):
+    """(已废弃 - ind_rate 现从 _industry 结果拿)"""
+    return []
+
+
+def _industry(norm):
+    """行业分布聚合 (与 aggregate.py 同源逻辑)。"""
+    import statistics
+    from collections import defaultdict
+    ind_map = defaultdict(lambda: {"ind": "未分类", "good": 0, "bad": 0, "neutral": 0, "chgs": []})
+    for r in norm:
+        ind = r.get("industry") or "未分类"
+        d = ind_map[ind]
+        d["ind"] = ind
+        d[r["cls"]] += 1
+        if r["cls"] == "good" and r["chg"] is not None and not r["low_base"]:
+            d["chgs"].append(r["chg"])
+    out = []
+    for d in ind_map.values():
+        total = d["good"] + d["bad"] + d["neutral"]
+        out.append({
+            "ind": d["ind"], "good": d["good"], "bad": d["bad"],
+            "neutral": d["neutral"], "total": total,
+            "good_rate": round(d["good"] / total, 3) if total else 0,
+            "median_chg": round(statistics.median(d["chgs"]), 1) if d["chgs"] else None,
+        })
+    out.sort(key=lambda x: x["total"], reverse=True)
+    return {"industry": out}
+
+
+def _vs_expect(norm, cmap):
+    """vs 一致预期 (与 aggregate.py 同源逻辑)。"""
+    GAP_BEAT = 15.0
+    GAP_MISS = -15.0
+    beat, inline, miss = 0, 0, 0
+    rows = []
+    for r in norm:
+        if r["cls"] != "good" or r["chg"] is None or r["low_base"]: continue
+        c = cmap.get(r["code"])
+        if not c or c["implied_yoy"] is None: continue
+        gap = round(r["chg"] - c["implied_yoy"], 1)
+        if gap >= GAP_BEAT: verdict = "超预期"; beat += 1
+        elif gap <= GAP_MISS: verdict = "不及预期"; miss += 1
+        else: verdict = "符合"; inline += 1
+        rows.append({
+            "code": r["code"], "name": r["name"], "industry": r["industry"],
+            "chg": r["chg"], "expect": c["implied_yoy"], "gap": gap, "verdict": verdict,
+        })
+    rows.sort(key=lambda x: x["gap"])
+    return {
+        "vs_expect": rows,
+        "stat": {"beat": beat, "inline": inline, "miss": miss},
+    }
+
+
 @app.route("/")
 def index():
     return send_from_directory(HERE, "dashboard.html")
+
+
+@app.route("/static/data/<path:filename>")
+def static_precomputed(filename):
+    """预计算的 JSON 静态服务 (dashboard 直接 fetch, 免实时计算)。"""
+    return send_from_directory(os.path.join(DATA_DIR, "precomputed"), filename,
+                               mimetype="application/json")
 
 
 @app.route("/api/panorama")
@@ -329,17 +564,25 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=3003)
     ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--warm", action="store_true", help="启动预热 min_yoy=50")
+    ap.add_argument("--warm", action="store_true", help="启动预热 + 预计算所有模块 JSON")
     ap.add_argument("--daily-refresh", type=int, default=None,
                     metavar="HOUR", help="每天 HOUR 时(0-23)自动重建快照, 如 --daily-refresh 18")
     args = ap.parse_args()
     # 启动先尝试从当天磁盘快照秒加载
     if CACHE.warm_from_disk(50):
         print("已从当天磁盘快照秒加载 (min_yoy=50)")
-    elif args.warm:
-        print("预热中 (min_yoy=50)...")
+    else:
+        # 首次启动: 预热 + 预计算 (后台线程, 不阻塞)
+        import threading as _th_init
+        def _init():
+            print("后台: 构建 panorama + 预计算模块 JSON...")
+            CACHE.get(50)
+            _precompute_all()
+        _th_init.Thread(target=_init, daemon=True).start()
+    if args.warm:
+        # 同步预热 (用户明确要求)
         CACHE.get(50)
-        print("预热完成")
+        _precompute_all()
     if args.daily_refresh is not None:
         import threading as _th
         _th.Thread(target=_daily_refresher, args=(args.daily_refresh, 50.0),

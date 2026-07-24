@@ -136,7 +136,7 @@ let CHART_HG = null, CHART_RF = null, CHART_IND = null, CHART_VS = null;
 async function showMenu() {
   $("app").innerHTML = '<div class="loading"><span class="spinner"></span>加载菜单...</div>';
   try {
-    const r = await fetch(API + "/api/summary");
+    const r = await fetch(API + "/static/data/summary.json" + "?t=" + Date.now());
     const d = await r.json();
     if (d.error) { $("app").innerHTML = '<div class="loading">❌ ' + d.error + '</div>'; return; }
     STATE.summary = d;
@@ -208,7 +208,7 @@ function renderMenu(d) {
 async function showModule(name) {
   $("app").innerHTML = '<div class="loading"><span class="spinner"></span>加载 ' + name + ' 数据...</div>';
   try {
-    const r = await fetch(API + "/api/module/" + name);
+    const r = await fetch(API + "/static/data/" + name + ".json" + "?t=" + Date.now());
     const d = await r.json();
     if (d.error) { $("app").innerHTML = '<div class="loading">❌ ' + d.error + '</div>'; return; }
     if (name === "high_growth") return renderHighGrowth(d);
@@ -235,6 +235,7 @@ async function renderHighGrowth(d) {
 
   // 慢字段异步补
   try {
+    // slow_fields (ths_eps/reports/ann) 走 /api 实时 (因为这些每个公司不同, 不预计算)
     const r = await fetch(API + "/api/slow_fields");
     const j = await r.json();
     const map = new Map((j.good_list||[]).map(r => [r.code, r]));
