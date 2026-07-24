@@ -470,8 +470,13 @@ async function renderVsExpect(d) {
 
   await loadChartJs();
 
-  // 排序: gap 绝对值降序 (超预期和不及预期都展示, 最显著的优先)
-  const sorted = [...(d.vs_expect||[])].sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap));
+  // 分两组: 超预期 / 不及预期, 各按 gap 绝对值降序
+  const all = d.vs_expect || [];
+  const beats = all.filter(r => r.verdict === "超预期")
+                    .sort((a, b) => b.gap - a.gap);  // gap 大 → 超预期幅度大
+  const misses = all.filter(r => r.verdict === "不及预期")
+                     .sort((a, b) => a.gap - b.gap); // gap 负得大 → 不及幅度大
+
   $("app").innerHTML = moduleHead("④ vs 一致预期",
     `${d.stat.beat||0} 超预期 / ${d.stat.miss||0} 不及预期 / ${d.stat.inline||0} 符合`)
     + `<div class="panel">
@@ -479,25 +484,34 @@ async function renderVsExpect(d) {
         <span class="badge ok">超预期 ${d.stat.beat||0}</span>
         <span class="badge">符合 ${d.stat.inline||0}</span>
         <span class="badge red">不及预期 ${d.stat.miss||0}</span>
-        <span style="color:var(--ink-3);font-size:11px;margin-left:auto">按 |gap| 降序,前 80</span>
       </div>
       <div class="panel-chart" style="height:180px"><canvas id="vsDonut"></canvas></div>
     </div>
-    <div class="panel" style="padding:0">
+    ${renderVsTable("🟢 超预期 (gap 降序, 越大越显著)", beats, "ok")}
+    ${renderVsTable("🔴 不及预期 (gap 升序, 越负越显著)", misses, "red")}`;
+
+  function renderVsTable(title, rows, badge) {
+    if (!rows.length) return "";
+    return `<div class="panel" style="padding:0">
+      <div class="row" style="padding:8px 12px;border-bottom:1px solid var(--line)">
+        <b>${title}</b>
+        <span class="badge ${badge}">${rows.length} 家</span>
+      </div>
       <div class="tbl-scroll"><table>
         <thead><tr><th>#</th><th>股票</th><th>行业</th>
           <th class="num">预告增速</th><th class="num">隐含预期</th>
-          <th class="num">缺口</th><th>判定</th></tr></thead>
-        <tbody>${sorted.slice(0,80).map((r, i) => `
+          <th class="num">缺口</th></tr></thead>
+        <tbody>${rows.map((r, i) => `
           <tr><td>${i+1}</td><td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
             <td><span class="ind-pill">${esc(r.industry||'')}</span></td>
             <td class="num">${gfmt(r.chg)}</td>
             <td class="num">${gfmt(r.expect)}</td>
-            <td class="num" style="${Math.abs(r.gap)>30?'font-weight:600':''}">${(r.gap>0?'+':'')+r.gap.toFixed(1)}</td>
-            <td><span class="badge ${r.verdict==='超预期'?'ok':r.verdict==='不及预期'?'red':''}">${r.verdict}</span></td>
+            <td class="num" style="font-weight:${Math.abs(r.gap)>30?'600':'400'};color:${badge==='ok'?'#0a7d0a':'#c93535'}">${(r.gap>0?'+':'')+r.gap.toFixed(1)}</td>
           </tr>`).join("")}</tbody>
       </table></div>
     </div>`;
+  }
+
   drawVsExpectChart(d);
 }
 
