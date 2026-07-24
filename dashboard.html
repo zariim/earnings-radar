@@ -470,22 +470,30 @@ async function renderVsExpect(d) {
 
   await loadChartJs();
 
+  // 排序: gap 绝对值降序 (超预期和不及预期都展示, 最显著的优先)
+  const sorted = [...(d.vs_expect||[])].sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap));
   $("app").innerHTML = moduleHead("④ vs 一致预期",
     `${d.stat.beat||0} 超预期 / ${d.stat.miss||0} 不及预期 / ${d.stat.inline||0} 符合`)
     + `<div class="panel">
-      <div class="panel-chart"><canvas id="vsDonut"></canvas></div>
+      <div class="row" style="margin-bottom:8px">
+        <span class="badge ok">超预期 ${d.stat.beat||0}</span>
+        <span class="badge">符合 ${d.stat.inline||0}</span>
+        <span class="badge red">不及预期 ${d.stat.miss||0}</span>
+        <span style="color:var(--ink-3);font-size:11px;margin-left:auto">按 |gap| 降序,前 80</span>
+      </div>
+      <div class="panel-chart" style="height:180px"><canvas id="vsDonut"></canvas></div>
     </div>
     <div class="panel" style="padding:0">
       <div class="tbl-scroll"><table>
         <thead><tr><th>#</th><th>股票</th><th>行业</th>
           <th class="num">预告增速</th><th class="num">隐含预期</th>
           <th class="num">缺口</th><th>判定</th></tr></thead>
-        <tbody>${(d.vs_expect||[]).slice(0,80).map((r, i) => `
+        <tbody>${sorted.slice(0,80).map((r, i) => `
           <tr><td>${i+1}</td><td><b>${esc(r.name)}</b> <span style="color:var(--ink-3);font-size:11px">${r.code}</span></td>
             <td><span class="ind-pill">${esc(r.industry||'')}</span></td>
             <td class="num">${gfmt(r.chg)}</td>
             <td class="num">${gfmt(r.expect)}</td>
-            <td class="num">${(r.gap>0?'+':'')+r.gap.toFixed(1)}</td>
+            <td class="num" style="${Math.abs(r.gap)>30?'font-weight:600':''}">${(r.gap>0?'+':'')+r.gap.toFixed(1)}</td>
             <td><span class="badge ${r.verdict==='超预期'?'ok':r.verdict==='不及预期'?'red':''}">${r.verdict}</span></td>
           </tr>`).join("")}</tbody>
       </table></div>
