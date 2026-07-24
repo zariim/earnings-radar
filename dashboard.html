@@ -527,7 +527,7 @@ window.openAnn = function(art_code, name) {
   $("annPdfBtn").href = `https://pdf.dfcfw.com/pdf/H2_${art_code}_1.pdf`;
   $("annDetailBtn").href = "#";
   $("annModal").classList.add("on");
-  fetch(API + "/announcement?art_code=" + encodeURIComponent(art_code))
+  fetch(API + "/api/announcement?art_code=" + encodeURIComponent(art_code))
     .then(r => r.json()).then(d => {
       if (d.error) { $("annBody").textContent = "加载失败: " + d.error; return; }
       $("annTitle").textContent = d.title || (name + " · 公告");
